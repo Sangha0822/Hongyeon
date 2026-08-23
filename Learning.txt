@@ -1,0 +1,145 @@
+HONGYEON — LEARNING LOG
+========================
+A running record of concepts I asked about while building this, and the
+reasoning behind them. Updated as we go through each phase.
+
+
+PHASE 0 — DE-RISK THE CORE LOOP
+================================
+
+--- Architecture: is significant-location-change the right call? ---
+
+Q: Is there a better way to do the location fetching than what the build
+   plan proposes?
+A: Significant-location-change (SLC) is genuinely the right primitive, not
+   a compromise. Continuous background updates drain battery and draw App
+   Store scrutiny; geofencing only tells you when YOU cross a line, not
+   distance to your partner; the Visits API is too laggy. SLC + best-effort
+   silent push is the standard pattern for battery-friendly background
+   proximity apps.
+
+
+ISSUE #1 — Bare FastAPI server (health check)
+----------------------------------------------
+
+--- Virtual environments ---
+
+Concept: A virtual environment (venv) is a self-contained folder holding
+just one project's Python packages, isolated from the system-wide Python
+and from other projects. Created with:
+    python3.12 -m venv venv
+Activated with:
+    source venv/bin/activate
+Why: without it, `pip install` pollutes the system Python, which can break
+other tools or require sudo.
+
+--- Debugging: double parentheses in terminal prompt ---
+
+Observed: after activating venv, prompt showed "((venv) )" instead of a
+clean "(venv) ". First hypothesis was conda's `base` environment
+auto-activating and layering its own prompt decoration on top of venv's.
+Tested with `echo $CONDA_DEFAULT_ENV` — came back empty, disproving the
+theory. Lesson: test a hypothesis before committing to a fix; when the
+evidence doesn't match, drop it. Root cause not fully chased down (VS
+Code integrated terminal likely involved) — confirmed harmless
+(`which python` proved the venv itself was active and correct) and
+deliberately parked since it wasn't blocking anything.
+
+--- GET vs POST, and why 404s aren't always errors ---
+
+Concept: hitting `/` or `/favicon.ico` in a browser returns 404 because no
+route was defined for those paths — that's FastAPI correctly saying
+"nothing here," not a bug. Only routes you explicitly define (like
+`/health`) will respond.
+
+--- Debugging: git pathspec error ---
+
+Error: `fatal: pathspec 'backend/' did not match any files`
+Cause: ran `git add backend/` while already standing inside `backend/`
+(prompt showed `backend %`), so git looked for `backend/backend/`, which
+doesn't exist. Lesson: git paths are resolved relative to your current
+working directory — always check where you are before trusting a
+relative path.
+
+--- Debugging: pasting a commit message directly into the shell ---
+
+Error: `zsh: command not found: Add`
+Cause: pasted the commit message text directly at the prompt instead of
+passing it as an argument to `git commit -m "..."`. Zsh tried to execute
+the first word ("Add") as a program name.
+
+
+ISSUE #2 — Location POST/GET endpoints (in-memory store)
+-----------------------------------------------------------
+
+--- POST endpoints and Pydantic models ---
+
+Concept: POST is for the client *sending* data (vs. GET, which only
+requests it). Pydantic models describe the expected shape of that data as
+a Python class; FastAPI validates incoming JSON against it automatically
+before your function even runs — no manual parsing/validation code needed.
+
+--- Understanding check: what happens on restart? ---
+
+Q: If the server restarts, what happens to data stored in a plain Python
+   variable?
+A (mine, confirmed correct): It's gone. A plain variable only lives in the
+   server process's RAM — restart, crash, or redeploy wipes it. This is
+   exactly the limitation issues #3–5 exist to fix, by moving storage into
+   Postgres, which persists to disk.
+
+
+ISSUE #3 — Local PostgreSQL + async SQLAlchemy connection
+--------------------------------------------------------------
+
+--- Choosing a local Postgres setup ---
+
+Decision: installed Postgres 16 natively via Homebrew (`brew services
+start postgresql@16`) rather than running it in Docker. Docker is closer
+to how many teams run it and easier to reset, but would have introduced
+container concepts not otherwise part of this build plan. Kept it simple.
+
+--- async def / await ---
+
+Q: Does `async def` mean the function can work on other things while
+   waiting for data?
+A (refined): Not quite the function itself — it's the *server* (uvicorn)
+   that can go handle *other incoming requests* while this one waits.
+   Analogy: a waiter who puts in your order then goes to take another
+   table's order, instead of standing at the kitchen window doing nothing
+   until your food's ready. Also: it's not optional once you need
+   `await` inside a function — `await` is illegal syntax inside a plain
+   `def`, so `async def` becomes mandatory the moment you need it.
+
+--- .env files and secrets ---
+
+Concept: `DATABASE_URL` (and later, real secrets like API keys) never get
+hardcoded into source files. They live in `.env`, which is gitignored, and
+get loaded into the environment at runtime via `python-dotenv`.
+
+
+ISSUE #4 — location_states model + Alembic migration
+---------------------------------------------------------
+
+--- SQLAlchemy vs. Alembic ---
+
+Q: Is SQLAlchemy just what translates Python into SQL to create tables
+   instead of writing CREATE TABLE by hand?
+A (refined): SQLAlchemy's job is broader — it translates Python <-> SQL
+   for ALL database operations (queries, inserts, updates), not just
+   table creation; e.g. `conn.execute(text("SELECT 1"))` back in issue #3
+   was already SQLAlchemy at work. The specific "generate CREATE TABLE"
+   job belongs to Alembic, which compares a SQLAlchemy model against the
+   database's actual current state and writes a versioned migration
+   script recording the difference — giving a reproducible, rollback-able
+   history instead of one-off manual schema changes.
+
+--- Declarative models ---
+
+Concept: a "declarative model" is a Python class where each attribute
+becomes a database column; SQLAlchemy reads the class definition to know
+how to generate matching SQL. Used the modern SQLAlchemy 2.0 style
+(`Mapped[...]` / `mapped_column(...)`) since this project started fresh
+with a current SQLAlchemy version.
+
+(To be continued as we go...)
