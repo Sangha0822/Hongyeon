@@ -11,4 +11,5 @@ class LocationState(Base):
     user_id: Mapped[str] = mapped_column(primary_key=True)
     lat: Mapped[float] = mapped_column(Float)
     lng: Mapped[float] = mapped_column(Float)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
