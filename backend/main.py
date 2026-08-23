@@ -1,11 +1,20 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import os
+from dotenv import load_dotenv
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+load_dotenv()
+engine = create_async_engine(os.environ["DATABASE_URL"])
 
 app = FastAPI()
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok"}
+async def health_check():
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
+    return {"status": "ok", "db": "connected"}
 
 class Location(BaseModel):
     lat: float
