@@ -191,4 +191,63 @@ without ever writing the production URL into any file on disk.
 
 ---
 
+### Issue #9 — Xcode project + location permission prompt
+
+First Swift/iOS work in the project — new language, new frameworks.
+
+**ObservableObject and @Published — how SwiftUI knows to redraw**
+
+iOS's location APIs don't return an answer immediately; permission
+results and location updates arrive later, asynchronously. SwiftUI needs
+a way to know "something changed, please redraw" when that happens.
+`ObservableObject` is a protocol that lets a class broadcast "I changed."
+`@Published` marks one specific property as "watch this one — notify
+observers whenever it changes." Analogy: `@Published` is a walkie-talkie
+strapped to a variable; changing it automatically radios out "I changed!"
+to anything listening. A plain `var` without `@Published` has no such
+walkie-talkie.
+
+**The delegate pattern**
+
+`CLLocationManagerDelegate` + `manager.delegate = self` is a common
+Apple-framework design, distinct from anything in the Python/FastAPI
+side of this project. "Delegate" means "the object I hand a task off
+to." Instead of polling "has anything happened yet?", you register an
+object to be notified when something does. `func
+locationManagerDidChangeAuthorization(...)` is a method *required* by
+that delegate protocol — never called directly; iOS calls it
+automatically whenever permission status actually changes (e.g. right
+after the user taps Allow/Don't Allow).
+
+**@StateObject**
+
+`@StateObject private var locationManager = LocationManager()` in a View
+means "this screen creates and *owns* one instance, keeping it alive for
+as long as the screen exists." Combined with `@Published` above, this is
+what makes the screen automatically redraw when `authorizationStatus`
+changes — no manual "refresh the UI" code needed anywhere.
+
+**Recurring error pattern: missing imports**
+
+Hit the same class of error twice in a row: `@Published` requires
+`import Combine` (it's not core Swift, it's a separate Apple toolkit),
+and `CLAuthorizationStatus` (used in a `switch` in `ContentView`)
+required `import CoreLocation` in *that* file specifically — importing a
+type in one file doesn't make it available in another. Both errors
+explicitly named "missing import of defining module" in the message,
+which was the direct clue both times.
+
+**Why "When In Use" first, not "Always"**
+
+iOS deliberately does not allow requesting "Always" location access
+upfront — apps must first request "When In Use," and can only *later*
+request an upgrade to "Always," which triggers a separate second system
+prompt. This app's whole premise (reporting location while backgrounded)
+needs "Always" eventually, but the upgrade step is deliberately deferred
+to issue #11, once significant-location-change (the feature that
+actually requires "Always") is being wired up — not requested speculatively
+here.
+
+---
+
 *(To be continued as we go...)*
