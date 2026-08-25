@@ -250,4 +250,58 @@ here.
 
 ---
 
+### Issue #10 — Manual POST on button tap to Render URL
+
+**Local vs. Render aren't "old vs. new" — they're two permanently separate copies**
+
+Got genuinely confused before writing this issue's code, so slowed down
+to map the whole picture out. There are two independent running copies
+of the same backend code: local (`localhost:8000` → local Postgres) and
+Render (`hongyeon-api.onrender.com` → Render Postgres). They never talk
+to each other — posting to one never affects the other's data. Local
+exists so *I* can iterate fast and break things safely; Render is the
+permanently-running public version. Both stay useful going forward —
+local for trying new backend changes safely before they're ever exposed
+publicly, Render as the real thing.
+
+The iOS app is a *third*, fully separate program — it doesn't run
+FastAPI or Postgres itself, it just sends HTTP requests to whichever URL
+it's told to. The Simulator technically *could* reach `localhost`
+(since it runs on the same Mac), but a real phone anywhere else never
+could — so the app deliberately points at the Render URL even while
+testing in the Simulator, to make Phase 0 an honest test of the real
+loop (two separate devices, talking over the real internet to one
+shared server) rather than a shortcut that only proves "my simulator
+can talk to my own laptop."
+
+**Swift also has async/await, for the same reason Python does**
+
+`func sendLocation() async` + `try await URLSession.shared.data(for:
+request)` — direct parallel to FastAPI's `async def` / `await` from the
+backend. `await` pauses just this function while waiting on the network,
+without blocking the rest of the app. `URLRequest` builds an HTTP
+request (method, headers, body) the same way `curl` commands have been
+doing manually all along, just in code.
+
+**Optionals and `guard let`, in practice**
+
+`lastLocation: CLLocation?` might not have a value yet (`nil`) — Swift
+forces this to be handled explicitly rather than risking a crash later.
+`guard let location = lastLocation else { return ... }` means "unwrap a
+real value, or bail out early here if there isn't one." After that line,
+`location` is guaranteed non-optional for the rest of the function.
+
+**A real SwiftUI lesson, not just a typo: defining a property doesn't display it**
+
+Added a `locationText` computed property, but forgot to actually place
+`Text(locationText)` inside the `body`/`VStack`. Nothing crashed or
+errored — the screen just silently didn't show it, because SwiftUI only
+renders what's explicitly placed in the view hierarchy. Defining a
+computed property that *describes* what to show is a separate step from
+*placing* it on screen — unlike a `print()` statement, which runs
+wherever it's written, a SwiftUI property does nothing until it's
+actually referenced inside `body`.
+
+---
+
 *(To be continued as we go...)*
