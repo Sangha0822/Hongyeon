@@ -18,7 +18,19 @@ struct ContentView: View {
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
+            Button("Get My Location") {
+                locationManager.requestLocation()
+            }
+            Text(locationText)
+            Button("Send Location") {
+                Task {
+                    await locationManager.sendLocation()
+                }
+            }
+
+            Text(locationManager.postStatus)
         }
+        
         .padding()
     }
 
@@ -33,6 +45,13 @@ struct ContentView: View {
         @unknown default:
             return "Unknown"
         }
+    }
+    
+    private var locationText: String {
+        guard let location = locationManager.lastLocation else {
+            return "No location yet"
+        }
+        return "Lat: \(location.coordinate.latitude), Lng: \(location.coordinate.longitude)"
     }
 }
 
