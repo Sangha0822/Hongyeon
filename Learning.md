@@ -121,4 +121,74 @@ with a current SQLAlchemy version.
 
 ---
 
+### Issue #5 — Swap in-memory store for real Postgres reads/writes
+
+**Timezone-aware vs. naive timestamps**
+
+A model column declared as plain `DateTime` maps to Postgres's
+`TIMESTAMP WITHOUT TIME ZONE` — a "naive" type with no concept of
+timezone. Trying to insert a timezone-*aware* Python value
+(`datetime.now(timezone.utc)`) into it fails, because Postgres won't
+silently guess whether that offset should be kept or dropped.
+
+Fixed by declaring `DateTime(timezone=True)` instead (→ `TIMESTAMP WITH
+TIME ZONE`), rather than just stripping the timezone off the Python
+value. Reasoning: with a naive column, nothing stops a future write from
+accidentally inserting a *local* time instead of UTC — Postgres can't
+tell the difference. A timezone-aware column enforces correctness at the
+database level instead of relying on every future line of code
+remembering a convention. Since a partner could be in a different
+timezone, this isn't a hypothetical.
+
+Changing a column's type on a table that already exists needs a second
+Alembic migration (`op.alter_column`) — editing the model alone doesn't
+touch the real database.
+
+**How the upsert avoids duplicating rows**
+
+The whole "overwrite, not duplicate" behavior comes down to one line:
+`session.get(LocationState, FIXED_USER_ID)` looks up a row by primary
+key *before* deciding what to do. If it finds one, `session.add()` never
+runs again for that user — only the existing object's attributes get
+changed, which SQLAlchemy turns into an `UPDATE` on commit instead of a
+second `INSERT`.
+
+---
+
+### Issues #6–8 — Deploying to Render
+
+**Why the start command differs from local (`0.0.0.0` and `$PORT`)**
+
+Locally, `uvicorn`'s default host (`127.0.0.1`) only accepts connections
+from your own machine. A public server needs to accept connections from
+the outside internet, so it must bind to `0.0.0.0` (all network
+interfaces). Similarly, Render assigns the actual port dynamically and
+exposes it via the `$PORT` environment variable — it can't be hardcoded
+like the `8000` used locally.
+
+**Internal vs. External database URL**
+
+Render gives two connection strings for the same database. The
+*Internal* URL only works for other services inside Render's own private
+network (e.g. the web service talking to its database) — faster, and
+doesn't leave Render's infrastructure. The *External* URL is reachable
+from anywhere, including a personal laptop — needed here once, to run
+Alembic migrations against the remote database from a local machine
+(Render's free tier has no SSH/shell access to run commands on the
+server itself).
+
+**Same code, different config per environment**
+
+Local `.env` and Render's environment variable panel both set
+`DATABASE_URL` for the exact same code (`main.py`), but to two different
+databases — and that's deliberate, not an oversight. This is *why*
+`DATABASE_URL` was never hardcoded in the first place: the same
+application code runs in multiple places, and each place supplies its
+own value for "which database to talk to." Also used a temporary,
+one-off environment variable override (prefixing a single shell command)
+to point Alembic at the remote database just for the migration step,
+without ever writing the production URL into any file on disk.
+
+---
+
 *(To be continued as we go...)*
