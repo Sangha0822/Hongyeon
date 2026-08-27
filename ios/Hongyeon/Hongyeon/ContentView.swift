@@ -18,14 +18,16 @@ struct ContentView: View {
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
+            Button("Upgrade to Always") {
+                locationManager.requestAlwaysPermission()
+            }
             Button("Get My Location") {
                 locationManager.requestLocation()
             }
             Text(locationText)
-            Button("Send Location") {
-                Task {
-                    await locationManager.sendLocation()
-                }
+            
+            Button("Start Background Tracking") {
+                locationManager.startSignificantLocationChanges()
             }
 
             Text(locationManager.postStatus)
@@ -38,14 +40,17 @@ struct ContentView: View {
         switch locationManager.authorizationStatus {
         case .notDetermined:
             return "Not asked yet"
-        case .authorizedWhenInUse, .authorizedAlways:
-            return "Granted"
+        case .authorizedWhenInUse:
+            return "Granted (When In Use)"
+        case .authorizedAlways:
+            return "Granted (Always)"
         case .denied, .restricted:
             return "Denied"
         @unknown default:
             return "Unknown"
         }
     }
+
     
     private var locationText: String {
         guard let location = locationManager.lastLocation else {
