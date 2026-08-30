@@ -10,9 +10,22 @@
 		F10144F6303DD77C006D87D7 /* Hongyeon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hongyeon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F1014550304482F6006D87D7 /* Exceptions for "Hongyeon" folder in "Hongyeon" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F10144F5303DD77C006D87D7 /* Hongyeon */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F10144F8303DD77C006D87D7 /* Hongyeon */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F1014550304482F6006D87D7 /* Exceptions for "Hongyeon" folder in "Hongyeon" target */,
+			);
 			path = Hongyeon;
 			sourceTree = "<group>";
 		};
@@ -251,11 +264,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Hongyeon/Hongyeon.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 45VK8TRXKZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hongyeon/Info.plist;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Hongyeon uses your location in the background to keep your distance from your partner up to date.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Hongyeon uses your location to show how far apart you and your partner are.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -285,11 +300,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Hongyeon/Hongyeon.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 45VK8TRXKZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hongyeon/Info.plist;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Hongyeon uses your location in the background to keep your distance from your partner up to date.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Hongyeon uses your location to show how far apart you and your partner are.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
