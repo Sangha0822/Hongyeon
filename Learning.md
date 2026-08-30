@@ -353,4 +353,65 @@ on-device only, and is scoped to issue #16 rather than bolted onto #11.
 
 ---
 
+### Issue #12 — APNs key setup + send one test silent push
+
+**AppDelegate and @UIApplicationDelegateAdaptor**
+
+SwiftUI's `App`/`Scene` system doesn't cover everything — a handful of
+low-level system events, including push notification registration, are
+only ever delivered through the older, pre-SwiftUI `AppDelegate`
+mechanism. `@UIApplicationDelegateAdaptor(AppDelegate.self)` in
+`HongyeonApp.swift` creates one instance of a delegate class and wires
+it into the running app; without that line, `AppDelegate.swift`'s
+methods would just be dead code nobody ever calls. Same underlying
+"delegate" pattern as `CLLocationManagerDelegate`, just Apple's original,
+app-lifecycle-level version of it.
+
+**Personal Team vs. a real paid Developer Program team**
+
+Push Notifications capability was invisible in Xcode's capability
+picker, even after searching — not a UI bug. Xcode was still signing
+with the free "Personal Team," which structurally cannot support Push
+Notifications at all (a hard Apple platform restriction, not a missing
+setting). Even after the paid enrollment was approved, Xcode kept
+showing "(Personal Team)" because it caches account status locally and
+doesn't proactively re-check with Apple's servers — a full restart
+forced it to re-fetch and show the real paid team.
+
+**Key content vs. a path to the key — a real bug, not a typo**
+
+`aioapns` needed the actual PEM key *content* (the real cryptographic
+material) but was handed the key's file *path* as a string instead —
+which it then tried to parse literally as if the path text itself were
+a cryptographic key, failing with an unhelpful-looking
+"Unable to load PEM file" error. Fixed by explicitly opening and reading
+the file first (`open(path).read()`), rather than trusting the library
+to resolve a path on its own. Worth remembering as a category of
+mistake distinct from a typo: passing the *reference* to something where
+the *thing itself* was expected.
+
+**Silent pushes are invisible by design, and "sent" ≠ "received"**
+
+A silent push (`{"aps": {"content-available": 1}}`, no `alert`/`sound`/
+`badge`) never shows anything on the device — no banner, no notification
+center entry, nothing. The only way to observe delivery is a
+`print()` inside `didReceiveRemoteNotification`, watched live in Xcode's
+console. Also: the backend script reporting `Success: True` only proves
+*Apple's servers accepted the push for delivery* — it does not prove the
+device received it. Those are two separate, decoupled steps, and actual
+delivery can be delayed by iOS at its own discretion (matches the build
+plan's "best-effort, never assumed real-time" framing for push).
+
+**Treating the device token as semi-sensitive**
+
+Caught before committing: an APNs device token was about to be
+hardcoded directly into a script meant for the public repo. Not as
+sensitive as the actual signing key (a token alone can't be used to send
+anything without valid APNs credentials too), but it's still a
+per-device identifier that shouldn't sit in public source — moved to
+`.env` alongside everything else, rather than assuming "not a password"
+means "fine to commit."
+
+---
+
 *(To be continued as we go...)*
