@@ -36,8 +36,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        lastLocation = locations.last
+        guard let location = locations.last else { return }
+        lastLocation = location
+        Task {
+            await sendLocation()
+        }
     }
+
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error: \(error.localizedDescription)")
@@ -72,6 +77,12 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         } catch {
             postStatus = "Network error: \(error.localizedDescription)"
         }
+    }
+    func requestAlwaysPermission() {
+        manager.requestAlwaysAuthorization()
+    }
+    func startSignificantLocationChanges() {
+        manager.startMonitoringSignificantLocationChanges()
     }
 
 }

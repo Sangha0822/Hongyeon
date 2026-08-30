@@ -304,4 +304,53 @@ actually referenced inside `body`.
 
 ---
 
+### Issue #11 — Replace button with significant-location-change trigger
+
+**Upgrading to "Always" needs a second, separate Info.plist key**
+
+Adding `requestAlwaysAuthorization()` alone wasn't enough — Settings
+didn't even show "Always" as an option until a *second* privacy string,
+`NSLocationAlwaysAndWhenInUseUsageDescription`, was added, distinct from
+`NSLocationWhenInUseUsageDescription` from issue #9. iOS requires apps to
+justify background access separately from foreground access. Also
+observed: once that key existed, tapping the in-app "Upgrade to Always"
+button did trigger a real native system prompt directly — going through
+Settings manually turned out not to be necessary once the actual missing
+piece (the Info.plist key) was fixed.
+
+**Significant-location-change has no fixed distance or time threshold**
+
+Confirmed through real use, not just documentation: SLC is triggered by
+hardware signals (cell tower handoffs, WiFi network changes) that only
+*loosely* correlate with distance — there's no fixed "500 meters" rule
+guaranteed to fire consistently. Real data from a weekend of normal use
+(commute, midday, a soccer trip) showed 4 independent triggers, each
+reflecting genuine movement — but the return drive from soccer produced
+*zero* new updates, despite obviously moving. Not a bug; this is
+expected, real behavior of an opportunistic, signal-based trigger.
+
+**The status bar location arrow only reflects active use, not dormant registration**
+
+Expected the location arrow (top-left of the status bar) to stay visibly
+"on" while the app was backgrounded and registered for SLC. It didn't —
+and that's correct behavior, not a sign anything was broken. The
+indicator reflects the app *actively* using location right now; while
+dormant/suspended waiting for a significant change, there's nothing
+active to indicate. It would only briefly flash at the exact moment an
+SLC event wakes the app. The database (`psql` against the live table),
+not the phone's UI, was the only reliable way to confirm this was
+actually working.
+
+**Why "how often does this fire" gets answered on-device, not server-side**
+
+Wanted a full log of every fire event (timestamp + coordinates) to
+characterize frequency properly. The backend deliberately can't do this
+— `location_states` overwrites on purpose; storing history there, even
+temporarily "just for testing," would compromise the actual privacy
+design the whole app is built around ("only the most recent location is
+ever stored — never a history"). Any such diagnostic logging belongs
+on-device only, and is scoped to issue #16 rather than bolted onto #11.
+
+---
+
 *(To be continued as we go...)*
