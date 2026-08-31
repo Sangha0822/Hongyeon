@@ -457,4 +457,17 @@ frameworks.
 
 ---
 
+### Issue #14 — iOS app handles silent push wake-up
+
+**`applicationState` removes ambiguity from "did this really fire in the background?"**
+
+`UIApplication.shared.applicationState.rawValue` gives a concrete number
+(0 = active/foreground, 1 = inactive, 2 = background) at the exact
+moment a callback fires — turning "I think this happened while
+backgrounded" into an actual logged fact. Worth reaching for whenever a
+background-vs-foreground distinction matters and needs real proof, not
+an assumption based on what the screen happened to show at the time.
+
+---
+
 *(To be continued as we go...)*
