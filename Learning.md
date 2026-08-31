@@ -414,4 +414,47 @@ means "fine to commit."
 
 ---
 
+### Issue #13 — Wire silent push into the location POST flow
+
+**`try/except: pass` as a deliberate design choice, not sloppy error handling**
+
+Wrapped the actual push-sending call in a bare `try/except: pass`. Looks
+wrong out of context — normally errors should stay visible. But this is
+intentional here, directly following the build plan's own framing: push
+is "best-effort, never the backbone." A brief APNs hiccup should never
+cause the *location save* (the part that actually matters, already
+committed to the database beforehand) to come back as a failure to the
+phone that just posted it. Deliberately swallowing this one specific
+error is a real design decision, not carelessness — the kind of thing
+worth a comment explaining "why," since it looks like a mistake at a
+glance.
+
+**`os.environ.get(...)` vs. `os.environ[...]`**
+
+`NOTIFY_DEVICE_TOKEN` is read with `.get()` (returns `None` if missing)
+rather than direct indexing (which raises `KeyError` if missing) — same
+distinction as `dict.get()` vs `dict[...]` generally. Deliberate here:
+this is a Phase 0 placeholder standing in for real pairing, so the
+endpoint should keep saving locations correctly even if it's ever unset,
+rather than the whole app crashing over a missing notification target.
+
+**Ordering matters: push only fires after `commit()` succeeds**
+
+The push-sending code sits *after* `await session.commit()`, not
+before. Only notify the partner once the change is actually,
+successfully saved — never send "something changed" before confirming
+it really did.
+
+**A second physical device made this a genuine test, not a assumption**
+
+Used an iPad (a spare device, no need to wait for the family member's
+phone) as the actual notified recipient — a real second, independent
+piece of hardware, rather than reusing the same iPhone as its own
+imagined "partner." Confirmed the same push notification setup
+(entitlements, capabilities, device trust) applies identically on
+iPadOS, since it's a different device but the same underlying iOS
+frameworks.
+
+---
+
 *(To be continued as we go...)*
