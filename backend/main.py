@@ -67,9 +67,10 @@ async def post_location(location: Location):
             push_type=PushType.BACKGROUND,
         )
         try:
-            await get_apns_client().send_notification(push_request)
-        except Exception:
-            pass
+            response = await get_apns_client().send_notification(push_request)
+            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
+        except Exception as e:
+            print(f"Push send failed: {e}")
     
     return {"status": "received"}
 
