@@ -12,8 +12,13 @@ from aioapns import APNs, NotificationRequest, PushType
 load_dotenv()
 engine = create_async_engine(os.environ["DATABASE_URL"])
 
+if os.environ.get("APNS_KEY_CONTENT"):
+    apns_key = os.environ["APNS_KEY_CONTENT"]
+else:
+    apns_key = open(os.environ["APNS_KEY_PATH"]).read()
+
 apns_client = APNs(
-    key=open(os.environ["APNS_KEY_PATH"]).read(),
+    key=apns_key,
     key_id=os.environ["APNS_KEY_ID"],
     team_id=os.environ["APNS_TEAM_ID"],
     topic=os.environ["APNS_TOPIC"],
