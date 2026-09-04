@@ -470,4 +470,64 @@ an assumption based on what the screen happened to show at the time.
 
 ---
 
+### Issue #15 — Close the loop (GET partner's location on wake)
+
+The longest debugging detour of the project so far — worth capturing in
+full, since almost every piece turned out to matter.
+
+**A local file path means nothing on a deployed server**
+
+`APNS_KEY_PATH` pointed at a file on my own machine
+(`~/.hongyeon/AuthKey_....p8`). That's meaningless to Render — it has no
+access to my filesystem at all. Crashed the deployed app on boot
+(`KeyError: 'APNS_KEY_PATH'`), silently, because Render kept serving the
+last *successful* deploy instead of taking the app down — so the bug was
+invisible until I specifically went looking at deploy history. Fix:
+support reading the key's actual *content* from an environment variable
+(`APNS_KEY_CONTENT`) as an alternative, since a deployed server can hold
+secret content directly but never a path into a laptop's home folder.
+
+**Building something at import time assumes machinery that might not exist yet**
+
+`aioapns`'s `APNs(...)` constructor needs an already-running async event
+loop internally. Building `apns_client` at the very top of `main.py`
+runs the instant Python imports the file — before uvicorn has started
+any event loop. Worked locally by accident (older Python's more lenient
+fallback); crashed immediately on Render's Python 3.14, which enforces
+this strictly. Fixed with a **lazy singleton**: a `get_apns_client()`
+function that builds the client only the first time it's actually
+called (from inside an already-running async endpoint, where a loop
+definitely exists) and reuses it after that. Generalizable pattern
+beyond APNs: don't build things needing runtime machinery at module load
+time — build them lazily, the first time they're actually needed.
+
+**Silently swallowing every exception hides real bugs, not just noise**
+
+`except Exception: pass` around the push-send call was the right call
+for *not breaking the location save* over a push hiccup — but it also
+meant zero visibility when things genuinely broke, twice in a row. Fixed
+by logging the outcome (success details or the exception message)
+without changing the "never fail the request" behavior. Best-effort
+error handling and *silent* error handling aren't the same thing —
+best-effort just means "don't let this specific failure block the more
+important thing," not "never record that it happened."
+
+**The real bug, in the end, was a lost git commit — not iOS at all**
+
+After fixing all three backend issues above, the fetch-on-wake code
+still appeared to do nothing — no success print, no failure print,
+total silence. Spent real time suspecting iOS was suspending the
+process before an unstructured `Task { }` could finish (a real,
+documented iOS behavior in general, just not what was actually
+happening here). The real cause: the `fetchPartnerLocation` code had
+never been committed to git, and an earlier `git restore`, run to clean
+up an unrelated branch during the backend hotfixes, permanently deleted
+the only copy of it. Everything after that point was debugging code
+that literally wasn't running anymore. Lesson locked in going forward:
+commit meaningful work immediately once it's confirmed correct, *before*
+any further branch-switching — never leave real work sitting uncommitted
+across a `git checkout`/`git restore`.
+
+---
+
 *(To be continued as we go...)*
