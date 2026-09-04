@@ -23,8 +23,32 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        print("Received remote notification at \(Date()), app state: \(application.applicationState.rawValue)")
-        completionHandler(.newData)
+        let receivedAt = Date()
+        print("Received remote notification at \(receivedAt), app state: \(application.applicationState.rawValue)")
+
+        Task {
+            await fetchPartnerLocation(receivedAt: receivedAt)
+            completionHandler(.newData)
+        }
     }
-    
+
+    func fetchPartnerLocation(receivedAt: Date) async {
+        guard let url = URL(string: "https://hongyeon-api.onrender.com/location") else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+            print("Fetched partner location: \(json)")
+
+            if let updatedAtString = json["updated_at"] as? String {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let updatedAt = formatter.date(from: updatedAtString) {
+                    let elapsed = receivedAt.timeIntervalSince(updatedAt)
+                    print("Time elapsed since the location was posted: \(elapsed) seconds")
+                }
+            }
+        } catch {
+            print("Failed to fetch partner location: \(error.localizedDescription)")
+        }
+    }
 }
