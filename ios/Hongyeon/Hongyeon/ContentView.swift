@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import AuthenticationServices
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
@@ -14,7 +15,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
-
+            
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
@@ -29,8 +30,25 @@ struct ContentView: View {
             Button("Start Background Tracking") {
                 locationManager.startSignificantLocationChanges()
             }
-
+            
             Text(locationManager.postStatus)
+            
+            SignInWithAppleButton(.signIn) { request in
+                request.requestedScopes = [.email]
+            } onCompletion: { result in
+                switch result {
+                case .success(let authorization):
+                    if let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                       let identityTokenData = credential.identityToken,
+                       let identityTokenString = String(data: identityTokenData, encoding: .utf8) {
+                        print("Apple identity token: \(identityTokenString)")
+                    }
+                case .failure(let error):
+                    print("Sign in with Apple failed: \(error.localizedDescription)")
+                }
+            }
+            .frame(height: 50)
+
         }
         
         .padding()
