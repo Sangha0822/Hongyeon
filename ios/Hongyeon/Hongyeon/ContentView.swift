@@ -10,6 +10,7 @@ import CoreLocation
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
+    @State private var freshnessLog: [String] = []
 
     var body: some View {
         VStack(spacing: 20) {
@@ -25,14 +26,25 @@ struct ContentView: View {
                 locationManager.requestLocation()
             }
             Text(locationText)
-            
+
             Button("Start Background Tracking") {
                 locationManager.startSignificantLocationChanges()
             }
 
             Text(locationManager.postStatus)
+
+            Button("Refresh Freshness Log (\(freshnessLog.count) entries)") {
+                freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
+            }
+
+            List(freshnessLog, id: \.self) { entry in
+                Text(entry)
+                    .font(.caption)
+            }
         }
-        
+        .onAppear {
+            freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
+        }
         .padding()
     }
 

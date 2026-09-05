@@ -45,10 +45,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 if let updatedAt = formatter.date(from: updatedAtString) {
                     let elapsed = receivedAt.timeIntervalSince(updatedAt)
                     print("Time elapsed since the location was posted: \(elapsed) seconds")
+                    logFreshnessEntry("SUCCESS at \(receivedAt): \(String(format: "%.2f", elapsed))s elapsed")
                 }
             }
         } catch {
             print("Failed to fetch partner location: \(error.localizedDescription)")
+            logFreshnessEntry("FAILURE at \(receivedAt): \(error.localizedDescription)")
         }
+    }
+
+    func logFreshnessEntry(_ entry: String) {
+        var log = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
+        log.append(entry)
+        UserDefaults.standard.set(log, forKey: "freshnessLog")
     }
 }
