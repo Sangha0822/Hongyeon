@@ -7,6 +7,8 @@
 
 import SwiftUI
 import CoreLocation
+import AuthenticationServices
+import GoogleSignIn
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
@@ -15,7 +17,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
-
+            
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
@@ -30,7 +32,7 @@ struct ContentView: View {
             Button("Start Background Tracking") {
                 locationManager.startSignificantLocationChanges()
             }
-
+            
             Text(locationManager.postStatus)
 
             Button("Refresh Freshness Log (\(freshnessLog.count) entries)") {
@@ -41,6 +43,40 @@ struct ContentView: View {
                 Text(entry)
                     .font(.caption)
             }
+
+            Button("Sign in with Google") {
+                guard let rootViewController = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first?.windows.first?.rootViewController else {
+                    return
+                }
+
+                GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
+                    if let error = error {
+                        print("Google sign-in failed: \(error.localizedDescription)")
+                        return
+                    }
+                    if let idToken = result?.user.idToken?.tokenString {
+                        print("Google identity token: \(idToken)")
+                    }
+                }
+            }
+
+            SignInWithAppleButton(.signIn) { request in
+                request.requestedScopes = [.email]
+            } onCompletion: { result in
+                switch result {
+                case .success(let authorization):
+                    if let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                       let identityTokenData = credential.identityToken,
+                       let identityTokenString = String(data: identityTokenData, encoding: .utf8) {
+                        print("Apple identity token: \(identityTokenString)")
+                    }
+                case .failure(let error):
+                    print("Sign in with Apple failed: \(error.localizedDescription)")
+                }
+            }
+            .frame(height: 50)
         }
         .onAppear {
             freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []

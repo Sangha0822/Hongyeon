@@ -5,6 +5,103 @@ reasoning behind them. Updated as we go through each phase.
 
 ---
 
+## Architecture & Technology Decisions
+
+A running record of real choices made between actual alternatives —
+what I picked, why, and what would make me reconsider later. Newest
+decisions added at the top.
+
+### Account linking across providers: not implemented (Phase 1, issue #33)
+
+**Options considered:**
+- Match users across providers by email, if both report the same address.
+- Do nothing — treat each provider as a fully separate identity.
+
+**Chosen:** do nothing. The `provider_subject` lookup is scoped per-provider, so
+signing in with Apple once and Google another time, as the same real person,
+creates two separate `users` rows rather than one.
+
+**Why:** Hongyeon is a two-person paired app signed into once, so switching
+providers for the same account is unlikely — and when it does happen, the
+failure mode is harmless (an extra unpaired row, not data loss or corrupted
+data). Email-based linking is also unreliable in practice, since Apple lets
+users hide their real email behind a relay address, so it wouldn't always
+match Google's real one anyway. Planned mitigation instead: remember and
+show "last signed in with [provider]" in the UI, so a user doesn't
+accidentally pick a different one.
+
+**Revisit if:** users actually report ending up with duplicate/unpaired
+accounts, or a future feature genuinely requires unifying identity across
+providers.
+
+### Session tokens: PyJWT + HS256 (Phase 1, issue #29)
+
+**Options considered:**
+- **PyJWT** — lightweight, does exactly one job (encode/decode JWTs), nothing else.
+- **python-jose** — what FastAPI's own official tutorial uses; also handles encryption, not just signing.
+- **Authlib** — a full OAuth/OIDC toolkit; far more than needed just to mint self-issued session tokens.
+- **HS256** (symmetric, one shared secret signs *and* verifies) vs. **RS256** (asymmetric, public/private key pair).
+
+**Chosen:** PyJWT, with HS256.
+
+**Why:** Hongyeon is a single FastAPI backend — the same service both issues and verifies its own tokens, so there's no need for python-jose's extra encryption support or Authlib's full OAuth machinery. HS256 is correct specifically because only one trusted party (this backend) ever needs to sign or check these tokens.
+
+**Revisit if:** the backend ever splits into multiple independently-trusted services (e.g., a separate auth service that mints tokens, and other services that should only be able to verify them, not forge them). That's when RS256's public/private key split actually earns its complexity — not a function of user count or scale.
+
+### Local database: Homebrew-native Postgres vs. Docker (Phase 0, issue #3)
+
+**Options considered:**
+- **Homebrew native install** — simple, no new concepts beyond what was already being used.
+- **Docker** — closer to how many teams run Postgres in practice, and trivially easy to fully reset/wipe.
+
+**Chosen:** Homebrew native.
+
+**Why:** kept the project's concept surface area minimal — Docker would have introduced container concepts not otherwise part of this build plan, for a benefit (easy reset, prod-like parity) that didn't matter yet for a solo local dev setup.
+
+**Revisit if:** working with a team where Docker-based onboarding matters, or needing to easily run/reset multiple Postgres versions side by side.
+
+### Sign-in: Apple + Google, not email/password or other alternatives (locked by BUILD_PLAN.md)
+
+**Options considered:**
+- **Email/password** — classic, but means owning password hashing, reset flows, and another credential for users to manage.
+- **OAuth via a big provider** (Google, Apple, Facebook) — one tap, no password to remember.
+- **Magic links / SMS OTP** — passwordless, but adds email/SMS delivery infrastructure.
+- **Passkeys** — modern, biometric-backed, no password at all.
+
+**Chosen:** Sign in with Apple **and** Google, both required.
+
+**Why:** not actually a stylistic choice — Apple's App Store Guideline 4.8 requires any app offering third-party sign-in to also offer a privacy-equivalent option (Sign in with Apple). Google-only would fail App Store review outright.
+
+**Revisit if:** never, as long as this ships through the App Store — this is a platform requirement, not a preference.
+
+### Location trigger: significant-location-change, not geofencing/continuous GPS/Visits API (locked by BUILD_PLAN.md)
+
+**Options considered:**
+- **Continuous GPS updates** — most accurate, but drains battery fast and draws extra App Store scrutiny.
+- **Geofencing (radius rings)** — only tells you when *you* cross a line, not your distance to your partner.
+- **Visits API** — very low power, but only fires on arrival/departure after staying somewhere a while — too laggy for a proximity app.
+- **Significant-location-change (SLC)** — signal-based (cell tower/WiFi handoffs), low power, works in the background.
+
+**Chosen:** significant-location-change.
+
+**Why:** the best fit for "battery-friendly background proximity awareness" — the standard pattern for this exact kind of app, confirmed in practice across issue #11's real-world testing.
+
+**Revisit if:** issue #16's freshness measurement shows SLC's real-world latency/miss-rate is unacceptable for what Hongyeon needs to promise users — the fallback would likely be a hybrid (SLC most of the time, with some continuous-update trigger in specific scenarios), trading battery for freshness.
+
+### APNs key scope: one combined Sandbox & Production key (Phase 0, issue #12)
+
+**Options considered:**
+- **Separate environment-specific keys** — Apple's own recommendation, for cleaner isolation between dev and prod workflows.
+- **One key covering both Sandbox and Production.**
+
+**Chosen:** one combined key.
+
+**Why:** simpler for a solo project — avoids managing two separate `.p8` files for a benefit (workflow isolation) that matters more for larger teams than for one person.
+
+**Revisit if:** working with a larger team where separating dev/prod push credentials becomes worth the extra management overhead.
+
+---
+
 ## Phase 0 — De-risk the core loop
 
 ### Architecture: is significant-location-change the right call?
@@ -527,6 +624,104 @@ that literally wasn't running anymore. Lesson locked in going forward:
 commit meaningful work immediately once it's confirmed correct, *before*
 any further branch-switching — never leave real work sitting uncommitted
 across a `git checkout`/`git restore`.
+
+---
+
+## Phase 1 — Backend auth & pairing
+
+### Issue #26 — users model + Alembic migration
+
+`User.id` uses `Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)`
+— a UUID generated on the Python side, not an auto-incrementing integer
+from Postgres. Two reasons this matters here specifically: integer ids
+leak information (an attacker or a nosy partner-of-a-partner could guess
+"user 2" exists just from seeing "user 1"), and a client-generated UUID
+means the id is known the instant the object is created in Python, before
+any database round-trip — relevant later when `expire_on_commit` came up
+in issue #31. `partner_id` is a nullable self-referential foreign key
+(`ForeignKey("users.id")`) — one user row points at another to represent
+the pairing, rather than a separate pairing table needing to be joined on
+every location lookup.
+
+### Issue #27 — pairing_codes model + Alembic migration
+
+`PairingCode.code` is the primary key — a short human-typed string, not a
+UUID — because the whole point of a pairing code is that a person reads it
+off one phone and types it into another; a UUID would defeat that. `expires_at`
+exists so a leaked or abandoned code can't be redeemed indefinitely — the
+join endpoint (issue #36, still ahead) will need to check it against the
+current time before honoring a code.
+
+### Issue #28 — location_states.user_id → real foreign key (in progress, not merged)
+
+The migration itself is written (PR #47), but merging it is deliberately
+**held**: it changes `location_states.user_id` from a plain string to a
+UUID `ForeignKey("users.id")`, which would break the live `/location`
+endpoint's `FIXED_USER_ID = "me"` placeholder — and that endpoint is mid-experiment
+for issue #16's real-device freshness data collection. Merging a schema
+change into a system currently being measured would invalidate the
+measurement. Revisit once issue #16 has its 10 logged data points.
+
+### Issue #29 — JWT helper (mint/verify session tokens)
+
+Covered in the **Session tokens: PyJWT + HS256** entry under Architecture &
+Technology Decisions, above — the algorithm choice, why HS256 over RS256
+for a self-issued/self-verified token, and the 365-day expiry reasoning
+all live there rather than being duplicated here.
+
+### Issue #30 — Apple identity token verification
+
+Apple signs identity tokens with **RS256** (asymmetric), not HS256 — this
+isn't a stylistic choice, it's forced by the situation: HS256 uses one
+shared secret to both sign and verify, which only works when the same
+party does both. Apple signs; *our* backend (and every other app's
+backend, and Apple's own servers) needs to verify — so it has to be a
+scheme where the signing key (private) and verifying key (public) are
+different. `PyJWKClient(APPLE_KEYS_URL)` fetches Apple's current public
+signing keys from `https://appleid.apple.com/auth/keys`, matches the
+right one by the `kid` in the token's header, and caches it. `verify_apple_identity_token`
+then checks the signature *and* that `iss`/`aud` match Apple's issuer and
+our specific app's bundle id — the `aud` check matters because without it,
+a valid Apple token *for a different app* would also pass verification
+here.
+
+### Issue #31 — POST /auth/apple endpoint
+
+**Sign-in flows all reduce to "look up by the provider's stable ID, create only if missing"**
+
+Apple's identity token carries `sub` — a value that's permanent for a given
+Apple account *and* app (unlike the email, which can be withheld or
+changed). The whole endpoint is one lookup by
+`provider_subject == claims["sub"]`: found → reuse that `users` row and
+mint a new session token; not found → create the row once, then mint the
+token. Verified this holds by signing in twice with the same real Apple ID
+— the first call created exactly one row, the second call reused it
+(confirmed with a direct `psql` count, not just by reading the code). This
+is the same shape every "sign in with X" endpoint will use, Google
+included.
+
+**`expire_on_commit=True` (the async session default) breaks reading attributes right after `commit()`**
+
+`await session.commit()` on a newly-created `User`, immediately followed by
+reading `user.id` on the next line, crashed with
+`MissingGreenlet: greenlet_spawn has not been called`. The cause:
+SQLAlchemy sessions expire every attribute of every object they're
+tracking as soon as `commit()` runs, on the assumption the database might
+have changed something server-side. Normally that's invisible — the next
+access just triggers a fresh SELECT — but async SQLAlchemy can't do that
+refetch inside a plain attribute access, only inside an `await`. Fixed at
+the `async_sessionmaker(engine, expire_on_commit=False)` level rather than
+patching this one call site, since the same trap will resurface in every
+future endpoint that creates a row and immediately needs something back
+from it (pairing codes are next).
+
+**Reading a traceback: find the first frame that's your own file, not the library's**
+
+The traceback was dozens of frames deep, almost all inside `sqlalchemy/`.
+The actual bug location was the *one* frame naming `main.py` — everything
+below it was just a consequence of that line. Skimming bottom-up for your
+own file first, before reading any library internals, cuts through most of
+the noise in a deep stack trace.
 
 ---
 

@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F1DDB1C2304D6229003F796C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F1DDB1C1304D6229003F796C /* GoogleSignIn */; };
+		F1DDB1C4304D6229003F796C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F1DDB1C3304D6229003F796C /* GoogleSignInSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F10144F6303DD77C006D87D7 /* Hongyeon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hongyeon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +41,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F1DDB1C2304D6229003F796C /* GoogleSignIn in Frameworks */,
+				F1DDB1C4304D6229003F796C /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +85,8 @@
 			);
 			name = Hongyeon;
 			packageProductDependencies = (
+				F1DDB1C1304D6229003F796C /* GoogleSignIn */,
+				F1DDB1C3304D6229003F796C /* GoogleSignInSwift */,
 			);
 			productName = Hongyeon;
 			productReference = F10144F6303DD77C006D87D7 /* Hongyeon.app */;
@@ -107,6 +116,9 @@
 			);
 			mainGroup = F10144ED303DD77C006D87D7;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F10144F7303DD77C006D87D7 /* Products */;
 			projectDirPath = "";
@@ -353,6 +365,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F1DDB1C1304D6229003F796C /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		F1DDB1C3304D6229003F796C /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F10144EE303DD77C006D87D7 /* Project object */;
 }
