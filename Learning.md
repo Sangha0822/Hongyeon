@@ -604,4 +604,51 @@ across a `git checkout`/`git restore`.
 
 ---
 
+## Phase 1 — Backend auth & pairing
+
+*(Issues #16–30 — users/pairing_codes models, the location_states FK
+migration, the JWT helper, and Apple token verification — aren't written up
+individually here yet; some of that reasoning is captured in the
+Architecture & Technology Decisions section above instead.)*
+
+### Issue #31 — POST /auth/apple endpoint
+
+**Sign-in flows all reduce to "look up by the provider's stable ID, create only if missing"**
+
+Apple's identity token carries `sub` — a value that's permanent for a given
+Apple account *and* app (unlike the email, which can be withheld or
+changed). The whole endpoint is one lookup by
+`provider_subject == claims["sub"]`: found → reuse that `users` row and
+mint a new session token; not found → create the row once, then mint the
+token. Verified this holds by signing in twice with the same real Apple ID
+— the first call created exactly one row, the second call reused it
+(confirmed with a direct `psql` count, not just by reading the code). This
+is the same shape every "sign in with X" endpoint will use, Google
+included.
+
+**`expire_on_commit=True` (the async session default) breaks reading attributes right after `commit()`**
+
+`await session.commit()` on a newly-created `User`, immediately followed by
+reading `user.id` on the next line, crashed with
+`MissingGreenlet: greenlet_spawn has not been called`. The cause:
+SQLAlchemy sessions expire every attribute of every object they're
+tracking as soon as `commit()` runs, on the assumption the database might
+have changed something server-side. Normally that's invisible — the next
+access just triggers a fresh SELECT — but async SQLAlchemy can't do that
+refetch inside a plain attribute access, only inside an `await`. Fixed at
+the `async_sessionmaker(engine, expire_on_commit=False)` level rather than
+patching this one call site, since the same trap will resurface in every
+future endpoint that creates a row and immediately needs something back
+from it (pairing codes are next).
+
+**Reading a traceback: find the first frame that's your own file, not the library's**
+
+The traceback was dozens of frames deep, almost all inside `sqlalchemy/`.
+The actual bug location was the *one* frame naming `main.py` — everything
+below it was just a consequence of that line. Skimming bottom-up for your
+own file first, before reading any library internals, cuts through most of
+the noise in a deep stack trace.
+
+---
+
 *(To be continued as we go...)*
