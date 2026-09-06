@@ -10,7 +10,7 @@ from models import LocationState
 from aioapns import APNs, NotificationRequest, PushType
 from sqlalchemy import select
 from models import User
-from auth import verify_apple_identity_token, create_session_token
+from auth import verify_apple_identity_token, verify_google_identity_token, create_session_token
 
 load_dotenv()
 engine = create_async_engine(os.environ["DATABASE_URL"])
@@ -85,6 +85,8 @@ async def get_location():
             return {}
         return {"lat": state.lat, "lng": state.lng, "updated_at": state.updated_at}
 
+
+#-------- APPLE JWT SIGN IN --------------------
 class AppleAuthRequest(BaseModel):
     identity_token: str
 
@@ -99,6 +101,29 @@ async def auth_apple(request: AppleAuthRequest):
         if user is None:
             user = User(
                 auth_provider="apple",
+                provider_subject=claims["provider_subject"],
+                email=claims.get("email"),
+            )
+            session.add(user)
+            await session.commit()
+        token = create_session_token(str(user.id))
+    return {"token": token}
+
+#-------- GOOGLE JWT SIGN IN --------------------
+class GoogleAuthRequest(BaseModel):
+    identity_token: str
+
+@app.post("/auth/google")
+async def auth_google(request: GoogleAuthRequest):
+    claims = verify_google_identity_token(request.identity_token)
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.provider_subject == claims["provider_subject"])
+        )
+        user = result.scalar_one_or_none()
+        if user is None:
+            user = User(
+                auth_provider="google",
                 provider_subject=claims["provider_subject"],
                 email=claims.get("email"),
             )

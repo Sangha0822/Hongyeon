@@ -11,6 +11,29 @@ A running record of real choices made between actual alternatives —
 what I picked, why, and what would make me reconsider later. Newest
 decisions added at the top.
 
+### Account linking across providers: not implemented (Phase 1, issue #33)
+
+**Options considered:**
+- Match users across providers by email, if both report the same address.
+- Do nothing — treat each provider as a fully separate identity.
+
+**Chosen:** do nothing. The `provider_subject` lookup is scoped per-provider, so
+signing in with Apple once and Google another time, as the same real person,
+creates two separate `users` rows rather than one.
+
+**Why:** Hongyeon is a two-person paired app signed into once, so switching
+providers for the same account is unlikely — and when it does happen, the
+failure mode is harmless (an extra unpaired row, not data loss or corrupted
+data). Email-based linking is also unreliable in practice, since Apple lets
+users hide their real email behind a relay address, so it wouldn't always
+match Google's real one anyway. Planned mitigation instead: remember and
+show "last signed in with [provider]" in the UI, so a user doesn't
+accidentally pick a different one.
+
+**Revisit if:** users actually report ending up with duplicate/unpaired
+accounts, or a future feature genuinely requires unifying identity across
+providers.
+
 ### Session tokens: PyJWT + HS256 (Phase 1, issue #29)
 
 **Options considered:**
