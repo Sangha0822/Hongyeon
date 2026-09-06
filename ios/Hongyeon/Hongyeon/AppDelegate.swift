@@ -35,6 +35,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func fetchPartnerLocation(receivedAt: Date) async {
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        displayFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
+        let koreaTime = displayFormatter.string(from: receivedAt)
+
         guard let url = URL(string: "https://hongyeon-api.onrender.com/location") else { return }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -42,19 +47,20 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             print("Fetched partner location: \(json)")
 
             if let updatedAtString = json["updated_at"] as? String {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                if let updatedAt = formatter.date(from: updatedAtString) {
+                let isoFormatter = ISO8601DateFormatter()
+                isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let updatedAt = isoFormatter.date(from: updatedAtString) {
                     let elapsed = receivedAt.timeIntervalSince(updatedAt)
                     print("Time elapsed since the location was posted: \(elapsed) seconds")
-                    logFreshnessEntry("SUCCESS at \(receivedAt): \(String(format: "%.2f", elapsed))s elapsed")
+                    logFreshnessEntry("SUCCESS at \(koreaTime) KST: \(String(format: "%.2f", elapsed))s elapsed")
                 }
             }
         } catch {
             print("Failed to fetch partner location: \(error.localizedDescription)")
-            logFreshnessEntry("FAILURE at \(receivedAt): \(error.localizedDescription)")
+            logFreshnessEntry("FAILURE at \(koreaTime) KST: \(error.localizedDescription)")
         }
     }
+
 
     func logFreshnessEntry(_ entry: String) {
         var log = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []

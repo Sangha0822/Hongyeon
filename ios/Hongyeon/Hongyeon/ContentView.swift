@@ -34,7 +34,11 @@ struct ContentView: View {
             }
             
             Text(locationManager.postStatus)
-
+            
+            Button("Clear Freshness Log") {
+                UserDefaults.standard.removeObject(forKey: "freshnessLog")
+                freshnessLog = []
+            }
             Button("Refresh Freshness Log (\(freshnessLog.count) entries)") {
                 freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
             }

@@ -11,6 +11,52 @@ A running record of real choices made between actual alternatives —
 what I picked, why, and what would make me reconsider later. Newest
 decisions added at the top.
 
+### Future freshness path: widget + WatchConnectivity, not Watch-side networking (planned, not yet built)
+
+**Options considered:**
+- Have the Apple Watch complication fetch the partner's location itself, directly over the network.
+- Have the iPhone do all networking, and relay results to the Watch via `WCSession.updateApplicationContext`.
+- Rely on silent push alone as the only freshness path for everything (phone and Watch).
+
+**Planned direction:** the Watch should never do its own networking — it only ever displays whatever
+the iPhone last learned, relayed via `updateApplicationContext` (a background-eligible, battery-friendly
+API built for exactly this: keeping a companion watch's cached state in sync). On the iPhone side,
+freshness should come from *two* independent paths, not one: silent push (near-instant, but doesn't
+survive the user force-quitting the app) plus a Home Screen widget with its own independent periodic
+refresh (a widget extension has a separate lifecycle from the main app, so it keeps working even if the
+main app was force-quit).
+
+**Why:** the Watch is explicitly meant to be glanceable without draining battery, so it must not fetch
+data on its own. Depending on silent push alone for the phone side is fragile: it stops working if a
+user manually force-quits the app (a real, hard iOS rule — force-quit blocks push-triggered wake, unlike
+significant-location-change monitoring, which is specifically exempted). A second, independent,
+periodic-refresh path via a widget gives a fallback that doesn't depend on the app ever being reopened.
+This also matches the project's own already-stated philosophy: push is best-effort, never assumed
+real-time — so lean into a slower-but-reliable backup instead of fighting iOS to guarantee something it
+won't guarantee.
+
+**Revisit if:** this direction turns out to be over-engineered once Phase 2/3's Watch/widget work
+actually starts — e.g., if iOS's widget refresh budget proves too infrequent to matter, or if
+WatchConnectivity's own delivery timing turns out to be the real bottleneck instead.
+
+### Force-quit vs. backgrounded: they are not the same state (Phase 0, issue #16 retest)
+
+**What I learned:** significant-location-change (SLC) monitoring and silent-push wake follow *different*
+rules for surviving a force-quit. A merely **backgrounded** app (home pressed, not swiped away in the
+app switcher) works fine for both — that's the normal state almost any phone sits in most of the time.
+But a **force-quit** (deliberately swiped away) app is only still reachable via SLC, which Apple
+specifically exempts from the "don't relaunch what the user killed" rule — silent push does **not** get
+that same exemption, and won't wake a force-quit app at all until the user manually reopens it once.
+
+**Why this matters for testing:** the sending device (reporting its own location via SLC) can safely be
+force-quit for a real background test. The receiving device (waiting for a silent push to learn the
+partner moved) cannot — it needs to be left merely backgrounded, not force-quit, or it will never
+receive anything.
+
+**Revisit if:** real user testing later shows force-quitting is common enough that receiving-side
+staleness becomes a real complaint — at which point the widget-based fallback path above (not yet
+built) would directly address it.
+
 ### Account linking across providers: not implemented (Phase 1, issue #33)
 
 **Options considered:**
