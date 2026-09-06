@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreLocation
 import AuthenticationServices
+import GoogleSignIn
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
@@ -32,6 +33,25 @@ struct ContentView: View {
             }
             
             Text(locationManager.postStatus)
+            
+            Button("Sign in with Google") {
+                guard let rootViewController = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first?.windows.first?.rootViewController else {
+                    return
+                }
+
+                GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
+                    if let error = error {
+                        print("Google sign-in failed: \(error.localizedDescription)")
+                        return
+                    }
+                    if let idToken = result?.user.idToken?.tokenString {
+                        print("Google identity token: \(idToken)")
+                    }
+                }
+            }
+
             
             SignInWithAppleButton(.signIn) { request in
                 request.requestedScopes = [.email]
