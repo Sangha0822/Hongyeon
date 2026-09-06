@@ -606,10 +606,61 @@ across a `git checkout`/`git restore`.
 
 ## Phase 1 — Backend auth & pairing
 
-*(Issues #16–30 — users/pairing_codes models, the location_states FK
-migration, the JWT helper, and Apple token verification — aren't written up
-individually here yet; some of that reasoning is captured in the
-Architecture & Technology Decisions section above instead.)*
+### Issue #26 — users model + Alembic migration
+
+`User.id` uses `Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)`
+— a UUID generated on the Python side, not an auto-incrementing integer
+from Postgres. Two reasons this matters here specifically: integer ids
+leak information (an attacker or a nosy partner-of-a-partner could guess
+"user 2" exists just from seeing "user 1"), and a client-generated UUID
+means the id is known the instant the object is created in Python, before
+any database round-trip — relevant later when `expire_on_commit` came up
+in issue #31. `partner_id` is a nullable self-referential foreign key
+(`ForeignKey("users.id")`) — one user row points at another to represent
+the pairing, rather than a separate pairing table needing to be joined on
+every location lookup.
+
+### Issue #27 — pairing_codes model + Alembic migration
+
+`PairingCode.code` is the primary key — a short human-typed string, not a
+UUID — because the whole point of a pairing code is that a person reads it
+off one phone and types it into another; a UUID would defeat that. `expires_at`
+exists so a leaked or abandoned code can't be redeemed indefinitely — the
+join endpoint (issue #36, still ahead) will need to check it against the
+current time before honoring a code.
+
+### Issue #28 — location_states.user_id → real foreign key (in progress, not merged)
+
+The migration itself is written (PR #47), but merging it is deliberately
+**held**: it changes `location_states.user_id` from a plain string to a
+UUID `ForeignKey("users.id")`, which would break the live `/location`
+endpoint's `FIXED_USER_ID = "me"` placeholder — and that endpoint is mid-experiment
+for issue #16's real-device freshness data collection. Merging a schema
+change into a system currently being measured would invalidate the
+measurement. Revisit once issue #16 has its 10 logged data points.
+
+### Issue #29 — JWT helper (mint/verify session tokens)
+
+Covered in the **Session tokens: PyJWT + HS256** entry under Architecture &
+Technology Decisions, above — the algorithm choice, why HS256 over RS256
+for a self-issued/self-verified token, and the 365-day expiry reasoning
+all live there rather than being duplicated here.
+
+### Issue #30 — Apple identity token verification
+
+Apple signs identity tokens with **RS256** (asymmetric), not HS256 — this
+isn't a stylistic choice, it's forced by the situation: HS256 uses one
+shared secret to both sign and verify, which only works when the same
+party does both. Apple signs; *our* backend (and every other app's
+backend, and Apple's own servers) needs to verify — so it has to be a
+scheme where the signing key (private) and verifying key (public) are
+different. `PyJWKClient(APPLE_KEYS_URL)` fetches Apple's current public
+signing keys from `https://appleid.apple.com/auth/keys`, matches the
+right one by the `kid` in the token's header, and caches it. `verify_apple_identity_token`
+then checks the signature *and* that `iss`/`aud` match Apple's issuer and
+our specific app's bundle id — the `aud` check matters because without it,
+a valid Apple token *for a different app* would also pass verification
+here.
 
 ### Issue #31 — POST /auth/apple endpoint
 
