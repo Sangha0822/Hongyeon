@@ -11,7 +11,7 @@ import AuthenticationServices
 import GoogleSignIn
 
 struct ContentView: View {
-    @StateObject private var locationManager = LocationManager()
+    @StateObject private var locationManager = LocationManager.shared
     @State private var freshnessLog: [String] = []
 
     var body: some View {

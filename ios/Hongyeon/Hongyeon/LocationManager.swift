@@ -12,6 +12,7 @@ import Combine
 
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    static let shared = LocationManager()
     private let manager = CLLocationManager()
     @Published var authorizationStatus: CLAuthorizationStatus
 
@@ -20,7 +21,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
     }
-
+    
     func requestPermission() {
         manager.requestWhenInUseAuthorization()
     }
