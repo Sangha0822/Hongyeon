@@ -824,4 +824,46 @@ the noise in a deep stack trace.
 
 ---
 
+### Issue #37 — Deploy Phase 1 to Render, verify against real URL
+
+**A passing test can still be verifying the wrong thing**
+
+`/auth/apple` and `/auth/google` crashed on the live server with
+`relation "users" does not exist` — the `users` table (issue #26) had
+never actually been created on Render's database, and neither had
+`pairing_codes` (issue #27) or the UUID/FK version of `location_states`
+(issue #28). `alembic upgrade head` had only ever been run manually once,
+very early on, and never again since — every migration added afterward
+silently never reached the live database at all.
+
+**Why this went unnoticed for so long: `/location` couldn't have caught it**
+
+Right after merging PR #47, I verified `/location` against the live URL
+and got back real data, and took that as confirmation the migration had
+succeeded. It hadn't — `post_location`/`get_location` just read and write
+a row keyed by `TEST_USER_ID`'s string form, which works identically
+whether the underlying column is a real `UUID` with a foreign key or just
+an old plain string column. The test wasn't wrong, exactly — it just
+wasn't capable of distinguishing the two schemas at all. `/auth/google`
+was the first endpoint that actually exercises the `users` table directly,
+which is why this was the first thing to expose the gap, despite it
+having existed since issue #26.
+
+**Fix:** ran `alembic upgrade head` against Render's Postgres directly
+from a local terminal, with `DATABASE_URL` temporarily overridden to
+Render's external connection string (Render's Shell for running it
+in-place isn't available on the free tier). This applied all three
+missing migrations in one pass. Re-verified the full flow — sign-in,
+pairing create, pairing join — against the live URL afterward, and
+confirmed the resulting mutual `partner_id` link directly via `psql`, not
+just a successful-looking API response.
+
+**Lesson going forward:** a test that returns a plausible result isn't
+the same as a test that could have caught the actual failure mode.
+Worth asking "what would this test look like if the thing I'm actually
+worried about were broken?" — if the answer is "identical," it isn't
+really testing that thing.
+
+---
+
 *(To be continued as we go...)*
