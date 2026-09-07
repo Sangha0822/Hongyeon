@@ -5,6 +5,149 @@ reasoning behind them. Updated as we go through each phase.
 
 ---
 
+## Architecture & Technology Decisions
+
+A running record of real choices made between actual alternatives —
+what I picked, why, and what would make me reconsider later. Newest
+decisions added at the top.
+
+### Future freshness path: widget + WatchConnectivity, not Watch-side networking (planned, not yet built)
+
+**Options considered:**
+- Have the Apple Watch complication fetch the partner's location itself, directly over the network.
+- Have the iPhone do all networking, and relay results to the Watch via `WCSession.updateApplicationContext`.
+- Rely on silent push alone as the only freshness path for everything (phone and Watch).
+
+**Planned direction:** the Watch should never do its own networking — it only ever displays whatever
+the iPhone last learned, relayed via `updateApplicationContext` (a background-eligible, battery-friendly
+API built for exactly this: keeping a companion watch's cached state in sync). On the iPhone side,
+freshness should come from *two* independent paths, not one: silent push (near-instant, but doesn't
+survive the user force-quitting the app) plus a Home Screen widget with its own independent periodic
+refresh (a widget extension has a separate lifecycle from the main app, so it keeps working even if the
+main app was force-quit).
+
+**Why:** the Watch is explicitly meant to be glanceable without draining battery, so it must not fetch
+data on its own. Depending on silent push alone for the phone side is fragile: it stops working if a
+user manually force-quits the app (a real, hard iOS rule — force-quit blocks push-triggered wake, unlike
+significant-location-change monitoring, which is specifically exempted). A second, independent,
+periodic-refresh path via a widget gives a fallback that doesn't depend on the app ever being reopened.
+This also matches the project's own already-stated philosophy: push is best-effort, never assumed
+real-time — so lean into a slower-but-reliable backup instead of fighting iOS to guarantee something it
+won't guarantee.
+
+**Revisit if:** this direction turns out to be over-engineered once Phase 2/3's Watch/widget work
+actually starts — e.g., if iOS's widget refresh budget proves too infrequent to matter, or if
+WatchConnectivity's own delivery timing turns out to be the real bottleneck instead.
+
+### Force-quit vs. backgrounded: they are not the same state (Phase 0, issue #16 retest)
+
+**What I learned:** significant-location-change (SLC) monitoring and silent-push wake follow *different*
+rules for surviving a force-quit. A merely **backgrounded** app (home pressed, not swiped away in the
+app switcher) works fine for both — that's the normal state almost any phone sits in most of the time.
+But a **force-quit** (deliberately swiped away) app is only still reachable via SLC, which Apple
+specifically exempts from the "don't relaunch what the user killed" rule — silent push does **not** get
+that same exemption, and won't wake a force-quit app at all until the user manually reopens it once.
+
+**Why this matters for testing:** the sending device (reporting its own location via SLC) can safely be
+force-quit for a real background test. The receiving device (waiting for a silent push to learn the
+partner moved) cannot — it needs to be left merely backgrounded, not force-quit, or it will never
+receive anything.
+
+**Revisit if:** real user testing later shows force-quitting is common enough that receiving-side
+staleness becomes a real complaint — at which point the widget-based fallback path above (not yet
+built) would directly address it.
+
+### Account linking across providers: not implemented (Phase 1, issue #33)
+
+**Options considered:**
+- Match users across providers by email, if both report the same address.
+- Do nothing — treat each provider as a fully separate identity.
+
+**Chosen:** do nothing. The `provider_subject` lookup is scoped per-provider, so
+signing in with Apple once and Google another time, as the same real person,
+creates two separate `users` rows rather than one.
+
+**Why:** Hongyeon is a two-person paired app signed into once, so switching
+providers for the same account is unlikely — and when it does happen, the
+failure mode is harmless (an extra unpaired row, not data loss or corrupted
+data). Email-based linking is also unreliable in practice, since Apple lets
+users hide their real email behind a relay address, so it wouldn't always
+match Google's real one anyway. Planned mitigation instead: remember and
+show "last signed in with [provider]" in the UI, so a user doesn't
+accidentally pick a different one.
+
+**Revisit if:** users actually report ending up with duplicate/unpaired
+accounts, or a future feature genuinely requires unifying identity across
+providers.
+
+### Session tokens: PyJWT + HS256 (Phase 1, issue #29)
+
+**Options considered:**
+- **PyJWT** — lightweight, does exactly one job (encode/decode JWTs), nothing else.
+- **python-jose** — what FastAPI's own official tutorial uses; also handles encryption, not just signing.
+- **Authlib** — a full OAuth/OIDC toolkit; far more than needed just to mint self-issued session tokens.
+- **HS256** (symmetric, one shared secret signs *and* verifies) vs. **RS256** (asymmetric, public/private key pair).
+
+**Chosen:** PyJWT, with HS256.
+
+**Why:** Hongyeon is a single FastAPI backend — the same service both issues and verifies its own tokens, so there's no need for python-jose's extra encryption support or Authlib's full OAuth machinery. HS256 is correct specifically because only one trusted party (this backend) ever needs to sign or check these tokens.
+
+**Revisit if:** the backend ever splits into multiple independently-trusted services (e.g., a separate auth service that mints tokens, and other services that should only be able to verify them, not forge them). That's when RS256's public/private key split actually earns its complexity — not a function of user count or scale.
+
+### Local database: Homebrew-native Postgres vs. Docker (Phase 0, issue #3)
+
+**Options considered:**
+- **Homebrew native install** — simple, no new concepts beyond what was already being used.
+- **Docker** — closer to how many teams run Postgres in practice, and trivially easy to fully reset/wipe.
+
+**Chosen:** Homebrew native.
+
+**Why:** kept the project's concept surface area minimal — Docker would have introduced container concepts not otherwise part of this build plan, for a benefit (easy reset, prod-like parity) that didn't matter yet for a solo local dev setup.
+
+**Revisit if:** working with a team where Docker-based onboarding matters, or needing to easily run/reset multiple Postgres versions side by side.
+
+### Sign-in: Apple + Google, not email/password or other alternatives (locked by BUILD_PLAN.md)
+
+**Options considered:**
+- **Email/password** — classic, but means owning password hashing, reset flows, and another credential for users to manage.
+- **OAuth via a big provider** (Google, Apple, Facebook) — one tap, no password to remember.
+- **Magic links / SMS OTP** — passwordless, but adds email/SMS delivery infrastructure.
+- **Passkeys** — modern, biometric-backed, no password at all.
+
+**Chosen:** Sign in with Apple **and** Google, both required.
+
+**Why:** not actually a stylistic choice — Apple's App Store Guideline 4.8 requires any app offering third-party sign-in to also offer a privacy-equivalent option (Sign in with Apple). Google-only would fail App Store review outright.
+
+**Revisit if:** never, as long as this ships through the App Store — this is a platform requirement, not a preference.
+
+### Location trigger: significant-location-change, not geofencing/continuous GPS/Visits API (locked by BUILD_PLAN.md)
+
+**Options considered:**
+- **Continuous GPS updates** — most accurate, but drains battery fast and draws extra App Store scrutiny.
+- **Geofencing (radius rings)** — only tells you when *you* cross a line, not your distance to your partner.
+- **Visits API** — very low power, but only fires on arrival/departure after staying somewhere a while — too laggy for a proximity app.
+- **Significant-location-change (SLC)** — signal-based (cell tower/WiFi handoffs), low power, works in the background.
+
+**Chosen:** significant-location-change.
+
+**Why:** the best fit for "battery-friendly background proximity awareness" — the standard pattern for this exact kind of app, confirmed in practice across issue #11's real-world testing.
+
+**Revisit if:** issue #16's freshness measurement shows SLC's real-world latency/miss-rate is unacceptable for what Hongyeon needs to promise users — the fallback would likely be a hybrid (SLC most of the time, with some continuous-update trigger in specific scenarios), trading battery for freshness.
+
+### APNs key scope: one combined Sandbox & Production key (Phase 0, issue #12)
+
+**Options considered:**
+- **Separate environment-specific keys** — Apple's own recommendation, for cleaner isolation between dev and prod workflows.
+- **One key covering both Sandbox and Production.**
+
+**Chosen:** one combined key.
+
+**Why:** simpler for a solo project — avoids managing two separate `.p8` files for a benefit (workflow isolation) that matters more for larger teams than for one person.
+
+**Revisit if:** working with a larger team where separating dev/prod push credentials becomes worth the extra management overhead.
+
+---
+
 ## Phase 0 — De-risk the core loop
 
 ### Architecture: is significant-location-change the right call?
@@ -527,6 +670,157 @@ that literally wasn't running anymore. Lesson locked in going forward:
 commit meaningful work immediately once it's confirmed correct, *before*
 any further branch-switching — never leave real work sitting uncommitted
 across a `git checkout`/`git restore`.
+
+---
+
+### Issue #16 — Real-device freshness measurement, go/no-go
+
+**First attempt was contaminated by the tester (me), not by iOS**
+
+The first batch of 10 logged entries mixed genuine background events with
+entries produced by manually reopening the app and tapping "Start
+Background Tracking" again — which itself often triggers an immediate
+fresh location fix from CoreLocation, unrelated to a real "you moved"
+event. That made the data useless for answering the actual question:
+does this work completely unattended?
+
+**The real bug: `CLLocationManager` only existed inside a SwiftUI `@StateObject`**
+
+Significant-location-change monitoring is supposed to relaunch a
+terminated app in the background — but the `CLLocationManager` doing that
+monitoring only ever got created inside `ContentView`'s `@StateObject`.
+Unlike the push-handling code (which correctly lives in `AppDelegate`, so
+it runs on every launch including a background-only one), there was no
+guarantee SwiftUI ever built `ContentView` during a pure background
+relaunch. Fixed by making `LocationManager` a singleton
+(`LocationManager.shared`) and having `AppDelegate` call
+`startSignificantLocationChanges()` unconditionally in
+`didFinishLaunchingWithOptions` — the one place guaranteed to run on
+every launch, including one the user never sees.
+
+**Force-quit and backgrounded are not the same state, and the two
+background mechanisms in this app follow different rules about surviving
+them** — full reasoning captured in the Architecture & Technology
+Decisions section above ("Force-quit vs. backgrounded"). Short version:
+the sending device can safely be force-quit (SLC is exempted); the
+receiving device cannot (silent push is not).
+
+**Retest, done properly this time: app force-quit, never reopened, real movement over a full day**
+
+Four SUCCESS entries logged automatically — leaving home, lunch, leaving
+work, and one later in the evening — matching real movement without
+either device ever being manually touched in between. Three of the four
+had freshness under 4 minutes; one had a ~26-minute gap, most likely
+explained by the receiving iPad's WiFi connection dropping briefly rather
+than any failure on the sending side (the event still eventually arrived
+correctly).
+
+**Go/no-go: GO.** Significant-location-change plus best-effort silent
+push is confirmed viable for Hongyeon's core background loop, under real
+unattended conditions, not just in the Simulator. The accepted tradeoff:
+freshness on the receiving side is not instant or guaranteed — occasional
+multi-minute gaps are expected and acceptable, consistent with treating
+push as best-effort from the start. This unblocks merging PR #47 (the
+`location_states` foreign-key migration), which was held specifically
+until this measurement was complete.
+
+---
+
+## Phase 1 — Backend auth & pairing
+
+### Issue #26 — users model + Alembic migration
+
+`User.id` uses `Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)`
+— a UUID generated on the Python side, not an auto-incrementing integer
+from Postgres. Two reasons this matters here specifically: integer ids
+leak information (an attacker or a nosy partner-of-a-partner could guess
+"user 2" exists just from seeing "user 1"), and a client-generated UUID
+means the id is known the instant the object is created in Python, before
+any database round-trip — relevant later when `expire_on_commit` came up
+in issue #31. `partner_id` is a nullable self-referential foreign key
+(`ForeignKey("users.id")`) — one user row points at another to represent
+the pairing, rather than a separate pairing table needing to be joined on
+every location lookup.
+
+### Issue #27 — pairing_codes model + Alembic migration
+
+`PairingCode.code` is the primary key — a short human-typed string, not a
+UUID — because the whole point of a pairing code is that a person reads it
+off one phone and types it into another; a UUID would defeat that. `expires_at`
+exists so a leaked or abandoned code can't be redeemed indefinitely — the
+join endpoint (issue #36, still ahead) will need to check it against the
+current time before honoring a code.
+
+### Issue #28 — location_states.user_id → real foreign key (in progress, not merged)
+
+The migration itself is written (PR #47), but merging it is deliberately
+**held**: it changes `location_states.user_id` from a plain string to a
+UUID `ForeignKey("users.id")`, which would break the live `/location`
+endpoint's `FIXED_USER_ID = "me"` placeholder — and that endpoint is mid-experiment
+for issue #16's real-device freshness data collection. Merging a schema
+change into a system currently being measured would invalidate the
+measurement. Revisit once issue #16 has its 10 logged data points.
+
+### Issue #29 — JWT helper (mint/verify session tokens)
+
+Covered in the **Session tokens: PyJWT + HS256** entry under Architecture &
+Technology Decisions, above — the algorithm choice, why HS256 over RS256
+for a self-issued/self-verified token, and the 365-day expiry reasoning
+all live there rather than being duplicated here.
+
+### Issue #30 — Apple identity token verification
+
+Apple signs identity tokens with **RS256** (asymmetric), not HS256 — this
+isn't a stylistic choice, it's forced by the situation: HS256 uses one
+shared secret to both sign and verify, which only works when the same
+party does both. Apple signs; *our* backend (and every other app's
+backend, and Apple's own servers) needs to verify — so it has to be a
+scheme where the signing key (private) and verifying key (public) are
+different. `PyJWKClient(APPLE_KEYS_URL)` fetches Apple's current public
+signing keys from `https://appleid.apple.com/auth/keys`, matches the
+right one by the `kid` in the token's header, and caches it. `verify_apple_identity_token`
+then checks the signature *and* that `iss`/`aud` match Apple's issuer and
+our specific app's bundle id — the `aud` check matters because without it,
+a valid Apple token *for a different app* would also pass verification
+here.
+
+### Issue #31 — POST /auth/apple endpoint
+
+**Sign-in flows all reduce to "look up by the provider's stable ID, create only if missing"**
+
+Apple's identity token carries `sub` — a value that's permanent for a given
+Apple account *and* app (unlike the email, which can be withheld or
+changed). The whole endpoint is one lookup by
+`provider_subject == claims["sub"]`: found → reuse that `users` row and
+mint a new session token; not found → create the row once, then mint the
+token. Verified this holds by signing in twice with the same real Apple ID
+— the first call created exactly one row, the second call reused it
+(confirmed with a direct `psql` count, not just by reading the code). This
+is the same shape every "sign in with X" endpoint will use, Google
+included.
+
+**`expire_on_commit=True` (the async session default) breaks reading attributes right after `commit()`**
+
+`await session.commit()` on a newly-created `User`, immediately followed by
+reading `user.id` on the next line, crashed with
+`MissingGreenlet: greenlet_spawn has not been called`. The cause:
+SQLAlchemy sessions expire every attribute of every object they're
+tracking as soon as `commit()` runs, on the assumption the database might
+have changed something server-side. Normally that's invisible — the next
+access just triggers a fresh SELECT — but async SQLAlchemy can't do that
+refetch inside a plain attribute access, only inside an `await`. Fixed at
+the `async_sessionmaker(engine, expire_on_commit=False)` level rather than
+patching this one call site, since the same trap will resurface in every
+future endpoint that creates a row and immediately needs something back
+from it (pairing codes are next).
+
+**Reading a traceback: find the first frame that's your own file, not the library's**
+
+The traceback was dozens of frames deep, almost all inside `sqlalchemy/`.
+The actual bug location was the *one* frame naming `main.py` — everything
+below it was just a consequence of that line. Skimming bottom-up for your
+own file first, before reading any library internals, cuts through most of
+the noise in a deep stack trace.
 
 ---
 

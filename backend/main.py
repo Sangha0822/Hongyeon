@@ -1,14 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import os
 import uuid
 from dotenv import load_dotenv
-from sqlalchemy import text
+from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import create_async_engine
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from models import LocationState
 from aioapns import APNs, NotificationRequest, PushType
+import uuid
+from models import User
+from auth import verify_apple_identity_token, verify_google_identity_token, create_session_token, verify_session_token
+import jwt
+
 
 load_dotenv()
 engine = create_async_engine(os.environ["DATABASE_URL"])
@@ -41,7 +47,7 @@ async def health_check():
     return {"status": "ok", "db": "connected"}
 
 
-async_session = async_sessionmaker(engine)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
 TEST_USER_ID = uuid.UUID("39cd8fb9-60b0-4fa3-ac0c-ad01051845e3")
 
 class Location(BaseModel):
@@ -82,3 +88,71 @@ async def get_location():
         if state is None:
             return {}
         return {"lat": state.lat, "lng": state.lng, "updated_at": state.updated_at}
+
+
+#-------- APPLE JWT SIGN IN --------------------
+class AppleAuthRequest(BaseModel):
+    identity_token: str
+
+@app.post("/auth/apple")
+async def auth_apple(request: AppleAuthRequest):
+    claims = verify_apple_identity_token(request.identity_token)
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.provider_subject == claims["provider_subject"])
+        )
+        user = result.scalar_one_or_none()
+        if user is None:
+            user = User(
+                auth_provider="apple",
+                provider_subject=claims["provider_subject"],
+                email=claims.get("email"),
+            )
+            session.add(user)
+            await session.commit()
+        token = create_session_token(str(user.id))
+    return {"token": token}
+
+#-------- GOOGLE JWT SIGN IN --------------------
+class GoogleAuthRequest(BaseModel):
+    identity_token: str
+
+@app.post("/auth/google")
+async def auth_google(request: GoogleAuthRequest):
+    claims = verify_google_identity_token(request.identity_token)
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.provider_subject == claims["provider_subject"])
+        )
+        user = result.scalar_one_or_none()
+        if user is None:
+            user = User(
+                auth_provider="google",
+                provider_subject=claims["provider_subject"],
+                email=claims.get("email"),
+            )
+            session.add(user)
+            await session.commit()
+        token = create_session_token(str(user.id))
+    return {"token": token}
+
+security = HTTPBearer(auto_error=False)
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> User:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authentication token")
+
+    try:
+        user_id = verify_session_token(credentials.credentials)
+    except jwt.exceptions.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
+    async with async_session() as session:
+        user = await session.get(User, uuid.UUID(user_id))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+    return user
+
+@app.get("/me")
+async def read_me(current_user: User = Depends(get_current_user)):
+    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider}
