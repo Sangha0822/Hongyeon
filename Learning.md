@@ -673,6 +673,59 @@ across a `git checkout`/`git restore`.
 
 ---
 
+### Issue #16 — Real-device freshness measurement, go/no-go
+
+**First attempt was contaminated by the tester (me), not by iOS**
+
+The first batch of 10 logged entries mixed genuine background events with
+entries produced by manually reopening the app and tapping "Start
+Background Tracking" again — which itself often triggers an immediate
+fresh location fix from CoreLocation, unrelated to a real "you moved"
+event. That made the data useless for answering the actual question:
+does this work completely unattended?
+
+**The real bug: `CLLocationManager` only existed inside a SwiftUI `@StateObject`**
+
+Significant-location-change monitoring is supposed to relaunch a
+terminated app in the background — but the `CLLocationManager` doing that
+monitoring only ever got created inside `ContentView`'s `@StateObject`.
+Unlike the push-handling code (which correctly lives in `AppDelegate`, so
+it runs on every launch including a background-only one), there was no
+guarantee SwiftUI ever built `ContentView` during a pure background
+relaunch. Fixed by making `LocationManager` a singleton
+(`LocationManager.shared`) and having `AppDelegate` call
+`startSignificantLocationChanges()` unconditionally in
+`didFinishLaunchingWithOptions` — the one place guaranteed to run on
+every launch, including one the user never sees.
+
+**Force-quit and backgrounded are not the same state, and the two
+background mechanisms in this app follow different rules about surviving
+them** — full reasoning captured in the Architecture & Technology
+Decisions section above ("Force-quit vs. backgrounded"). Short version:
+the sending device can safely be force-quit (SLC is exempted); the
+receiving device cannot (silent push is not).
+
+**Retest, done properly this time: app force-quit, never reopened, real movement over a full day**
+
+Four SUCCESS entries logged automatically — leaving home, lunch, leaving
+work, and one later in the evening — matching real movement without
+either device ever being manually touched in between. Three of the four
+had freshness under 4 minutes; one had a ~26-minute gap, most likely
+explained by the receiving iPad's WiFi connection dropping briefly rather
+than any failure on the sending side (the event still eventually arrived
+correctly).
+
+**Go/no-go: GO.** Significant-location-change plus best-effort silent
+push is confirmed viable for Hongyeon's core background loop, under real
+unattended conditions, not just in the Simulator. The accepted tradeoff:
+freshness on the receiving side is not instant or guaranteed — occasional
+multi-minute gaps are expected and acceptable, consistent with treating
+push as best-effort from the start. This unblocks merging PR #47 (the
+`location_states` foreign-key migration), which was held specifically
+until this measurement was complete.
+
+---
+
 ## Phase 1 — Backend auth & pairing
 
 ### Issue #26 — users model + Alembic migration
