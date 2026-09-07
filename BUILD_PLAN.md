@@ -141,6 +141,19 @@ the real-time foreground compass (polling every ~2–3s).
 ### Phase 6 — Polish & later work
 WebSocket upgrade, iPhone widget, extra features, and App Store submission prep.
 
+### Beyond Phase 6 — Hongyeon as a couple app, not just a location app
+
+A pure "where's my partner" app has a real ceiling: it's inherently passive,
+with little to actually *do* day-to-day beyond glancing at a distance. The
+long-term direction is for location/proximity to be Hongyeon's **anchor**
+feature, not its only one — expanding later into things like shared notes,
+streaks, photo sharing, or a shared calendar, similar to how most
+successful long-distance-couple apps evolve.
+
+This is explicitly a **future direction, not current scope** — nothing
+here changes the priority of Phases 0–6 above. Location has to fully ship
+first. Revisit once the core proximity loop is live and stable, not before.
+
 ---
 
 ## 6. Risks to Watch (and where they bite)
