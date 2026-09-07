@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import os
+import uuid
 from dotenv import load_dotenv
 from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -47,7 +48,7 @@ async def health_check():
 
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
-FIXED_USER_ID = "me"
+TEST_USER_ID = uuid.UUID("39cd8fb9-60b0-4fa3-ac0c-ad01051845e3")
 
 class Location(BaseModel):
     lat: float
@@ -56,9 +57,9 @@ class Location(BaseModel):
 @app.post("/location")
 async def post_location(location: Location):
     async with async_session() as session:
-        state = await session.get(LocationState, FIXED_USER_ID)
+        state = await session.get(LocationState, TEST_USER_ID)
         if state is None:
-            state = LocationState(user_id=FIXED_USER_ID)
+            state = LocationState(user_id=TEST_USER_ID)
             session.add(state)
         state.lat = location.lat
         state.lng = location.lng
@@ -83,7 +84,7 @@ async def post_location(location: Location):
 @app.get("/location")
 async def get_location():
     async with async_session() as session:
-        state = await session.get(LocationState, FIXED_USER_ID)
+        state = await session.get(LocationState, TEST_USER_ID)
         if state is None:
             return {}
         return {"lat": state.lat, "lng": state.lng, "updated_at": state.updated_at}
