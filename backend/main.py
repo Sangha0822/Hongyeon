@@ -170,3 +170,27 @@ async def create_pairing_code(current_user: User = Depends(get_current_user)):
         session.add(pairing_code)
         await session.commit()
     return {"code": code}
+
+class JoinPairingRequest(BaseModel):
+    code: str
+
+@app.post("/pairing/join")
+async def join_pairing_code(request: JoinPairingRequest, current_user: User = Depends(get_current_user)):
+    code = request.code.upper()
+    async with async_session() as session:
+        pairing_code = await session.get(PairingCode, code)
+        if pairing_code is None or pairing_code.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Invalid or expired pairing code")
+
+        if pairing_code.creator_id == current_user.id:
+            raise HTTPException(status_code=400, detail="You cannot join your own pairing code")
+
+        creator = await session.get(User, pairing_code.creator_id)
+        joiner = await session.get(User, current_user.id)
+        creator.partner_id = joiner.id
+        joiner.partner_id = creator.id
+
+        await session.delete(pairing_code)
+        await session.commit()
+
+    return {"partner_id": str(creator.id)}
