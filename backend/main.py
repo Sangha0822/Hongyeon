@@ -5,16 +5,13 @@ import os
 import uuid
 from dotenv import load_dotenv
 from sqlalchemy import text, select
-from sqlalchemy.ext.asyncio import create_async_engine
-from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from models import LocationState
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from datetime import datetime, timezone, timedelta
+from models import LocationState, User, PairingCode
 from aioapns import APNs, NotificationRequest, PushType
-import uuid
-from models import User
 from auth import verify_apple_identity_token, verify_google_identity_token, create_session_token, verify_session_token
 import jwt
-
+import random
 
 load_dotenv()
 engine = create_async_engine(os.environ["DATABASE_URL"])
@@ -156,3 +153,20 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials | None = De
 @app.get("/me")
 async def read_me(current_user: User = Depends(get_current_user)):
     return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider}
+
+
+#----------Pairing Code --------
+
+CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+@app.post("/pairing/create")
+async def create_pairing_code(current_user: User = Depends(get_current_user)):
+    code = ''.join(random.choices(CODE_ALPHABET, k=6))
+    async with async_session() as session:
+        pairing_code = PairingCode(
+            code = code,
+            creator_id = current_user.id,
+            expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        )
+        session.add(pairing_code)
+        await session.commit()
+    return {"code": code}
