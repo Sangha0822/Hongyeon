@@ -11,6 +11,52 @@ A running record of real choices made between actual alternatives —
 what I picked, why, and what would make me reconsider later. Newest
 decisions added at the top.
 
+### Future freshness path: widget + WatchConnectivity, not Watch-side networking (planned, not yet built)
+
+**Options considered:**
+- Have the Apple Watch complication fetch the partner's location itself, directly over the network.
+- Have the iPhone do all networking, and relay results to the Watch via `WCSession.updateApplicationContext`.
+- Rely on silent push alone as the only freshness path for everything (phone and Watch).
+
+**Planned direction:** the Watch should never do its own networking — it only ever displays whatever
+the iPhone last learned, relayed via `updateApplicationContext` (a background-eligible, battery-friendly
+API built for exactly this: keeping a companion watch's cached state in sync). On the iPhone side,
+freshness should come from *two* independent paths, not one: silent push (near-instant, but doesn't
+survive the user force-quitting the app) plus a Home Screen widget with its own independent periodic
+refresh (a widget extension has a separate lifecycle from the main app, so it keeps working even if the
+main app was force-quit).
+
+**Why:** the Watch is explicitly meant to be glanceable without draining battery, so it must not fetch
+data on its own. Depending on silent push alone for the phone side is fragile: it stops working if a
+user manually force-quits the app (a real, hard iOS rule — force-quit blocks push-triggered wake, unlike
+significant-location-change monitoring, which is specifically exempted). A second, independent,
+periodic-refresh path via a widget gives a fallback that doesn't depend on the app ever being reopened.
+This also matches the project's own already-stated philosophy: push is best-effort, never assumed
+real-time — so lean into a slower-but-reliable backup instead of fighting iOS to guarantee something it
+won't guarantee.
+
+**Revisit if:** this direction turns out to be over-engineered once Phase 2/3's Watch/widget work
+actually starts — e.g., if iOS's widget refresh budget proves too infrequent to matter, or if
+WatchConnectivity's own delivery timing turns out to be the real bottleneck instead.
+
+### Force-quit vs. backgrounded: they are not the same state (Phase 0, issue #16 retest)
+
+**What I learned:** significant-location-change (SLC) monitoring and silent-push wake follow *different*
+rules for surviving a force-quit. A merely **backgrounded** app (home pressed, not swiped away in the
+app switcher) works fine for both — that's the normal state almost any phone sits in most of the time.
+But a **force-quit** (deliberately swiped away) app is only still reachable via SLC, which Apple
+specifically exempts from the "don't relaunch what the user killed" rule — silent push does **not** get
+that same exemption, and won't wake a force-quit app at all until the user manually reopens it once.
+
+**Why this matters for testing:** the sending device (reporting its own location via SLC) can safely be
+force-quit for a real background test. The receiving device (waiting for a silent push to learn the
+partner moved) cannot — it needs to be left merely backgrounded, not force-quit, or it will never
+receive anything.
+
+**Revisit if:** real user testing later shows force-quitting is common enough that receiving-side
+staleness becomes a real complaint — at which point the widget-based fallback path above (not yet
+built) would directly address it.
+
 ### Account linking across providers: not implemented (Phase 1, issue #33)
 
 **Options considered:**
@@ -624,6 +670,59 @@ that literally wasn't running anymore. Lesson locked in going forward:
 commit meaningful work immediately once it's confirmed correct, *before*
 any further branch-switching — never leave real work sitting uncommitted
 across a `git checkout`/`git restore`.
+
+---
+
+### Issue #16 — Real-device freshness measurement, go/no-go
+
+**First attempt was contaminated by the tester (me), not by iOS**
+
+The first batch of 10 logged entries mixed genuine background events with
+entries produced by manually reopening the app and tapping "Start
+Background Tracking" again — which itself often triggers an immediate
+fresh location fix from CoreLocation, unrelated to a real "you moved"
+event. That made the data useless for answering the actual question:
+does this work completely unattended?
+
+**The real bug: `CLLocationManager` only existed inside a SwiftUI `@StateObject`**
+
+Significant-location-change monitoring is supposed to relaunch a
+terminated app in the background — but the `CLLocationManager` doing that
+monitoring only ever got created inside `ContentView`'s `@StateObject`.
+Unlike the push-handling code (which correctly lives in `AppDelegate`, so
+it runs on every launch including a background-only one), there was no
+guarantee SwiftUI ever built `ContentView` during a pure background
+relaunch. Fixed by making `LocationManager` a singleton
+(`LocationManager.shared`) and having `AppDelegate` call
+`startSignificantLocationChanges()` unconditionally in
+`didFinishLaunchingWithOptions` — the one place guaranteed to run on
+every launch, including one the user never sees.
+
+**Force-quit and backgrounded are not the same state, and the two
+background mechanisms in this app follow different rules about surviving
+them** — full reasoning captured in the Architecture & Technology
+Decisions section above ("Force-quit vs. backgrounded"). Short version:
+the sending device can safely be force-quit (SLC is exempted); the
+receiving device cannot (silent push is not).
+
+**Retest, done properly this time: app force-quit, never reopened, real movement over a full day**
+
+Four SUCCESS entries logged automatically — leaving home, lunch, leaving
+work, and one later in the evening — matching real movement without
+either device ever being manually touched in between. Three of the four
+had freshness under 4 minutes; one had a ~26-minute gap, most likely
+explained by the receiving iPad's WiFi connection dropping briefly rather
+than any failure on the sending side (the event still eventually arrived
+correctly).
+
+**Go/no-go: GO.** Significant-location-change plus best-effort silent
+push is confirmed viable for Hongyeon's core background loop, under real
+unattended conditions, not just in the Simulator. The accepted tradeoff:
+freshness on the receiving side is not instant or guaranteed — occasional
+multi-minute gaps are expected and acceptable, consistent with treating
+push as best-effort from the start. This unblocks merging PR #47 (the
+`location_states` foreign-key migration), which was held specifically
+until this measurement was complete.
 
 ---
 

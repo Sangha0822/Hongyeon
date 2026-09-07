@@ -11,7 +11,8 @@ import AuthenticationServices
 import GoogleSignIn
 
 struct ContentView: View {
-    @StateObject private var locationManager = LocationManager()
+    @StateObject private var locationManager = LocationManager.shared
+    @State private var freshnessLog: [String] = []
 
     var body: some View {
         VStack(spacing: 20) {
@@ -27,13 +28,26 @@ struct ContentView: View {
                 locationManager.requestLocation()
             }
             Text(locationText)
-            
+
             Button("Start Background Tracking") {
                 locationManager.startSignificantLocationChanges()
             }
             
             Text(locationManager.postStatus)
             
+            Button("Clear Freshness Log") {
+                UserDefaults.standard.removeObject(forKey: "freshnessLog")
+                freshnessLog = []
+            }
+            Button("Refresh Freshness Log (\(freshnessLog.count) entries)") {
+                freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
+            }
+
+            List(freshnessLog, id: \.self) { entry in
+                Text(entry)
+                    .font(.caption)
+            }
+
             Button("Sign in with Google") {
                 guard let rootViewController = UIApplication.shared.connectedScenes
                     .compactMap({ $0 as? UIWindowScene })
@@ -52,7 +66,6 @@ struct ContentView: View {
                 }
             }
 
-            
             SignInWithAppleButton(.signIn) { request in
                 request.requestedScopes = [.email]
             } onCompletion: { result in
@@ -68,9 +81,10 @@ struct ContentView: View {
                 }
             }
             .frame(height: 50)
-
         }
-        
+        .onAppear {
+            freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
+        }
         .padding()
     }
 
