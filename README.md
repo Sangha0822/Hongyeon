@@ -76,38 +76,35 @@ feature area, shared services (database, push) that any router can use, and a
 single security dependency protecting anything that needs a logged-in user.
 
 ```mermaid
-flowchart TB
-    Client(["Incoming request"])
-    Main["main.py<br/>registers routers"]
-    Auth["routers/auth_routes.py<br/>/auth/apple, /auth/google, /me"]
-    Loc["routers/location.py<br/>/location"]
-    Pair["routers/pairing.py<br/>/pairing/create, /pairing/join"]
-    Dep["dependencies.py<br/>get_current_user"]
-    AuthLib["auth.py<br/>token verification"]
-    DB["database.py<br/>engine, async_session"]
-    Models["models.py<br/>SQLAlchemy tables"]
-    Push["push.py<br/>APNs client"]
+flowchart LR
+    Client(["Incoming request"]) --> Main["main.py<br/>registers routers"]
 
-    Client --> Main
+    subgraph Routers["Routers (routers/)"]
+        direction TB
+        Auth["auth_routes.py<br/>/auth/apple, /auth/google, /me"]
+        Loc["location.py<br/>/location"]
+        Pair["pairing.py<br/>/pairing/create, /pairing/join"]
+    end
+
     Main --> Auth
     Main --> Loc
     Main --> Pair
 
-    Auth --> AuthLib
-    Auth --> DB
-    Auth --> Models
-
-    Loc --> DB
-    Loc --> Push
-    Loc --> Models
-
+    Auth --> Dep["dependencies.py<br/>get_current_user"]
     Pair --> Dep
-    Pair --> DB
-    Pair --> Models
 
-    Dep --> AuthLib
-    Dep --> DB
-    Dep --> Models
+    subgraph Shared["Shared services"]
+        direction TB
+        AuthLib["auth.py<br/>token verification"]
+        DB["database.py<br/>engine, async_session"]
+        Models["models.py<br/>SQLAlchemy tables"]
+        Push["push.py<br/>APNs client"]
+    end
+
+    Auth --> Shared
+    Loc --> Shared
+    Pair --> Shared
+    Dep --> Shared
 ```
 
 ## Tech stack
