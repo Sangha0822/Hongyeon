@@ -69,6 +69,47 @@ A few deliberate engineering choices worth calling out:
 - **Privacy is the architecture, not a setting** — the database schema physically can't hold a
   location history because each update overwrites the last.
 
+### Backend code structure
+
+The FastAPI backend is organized so each file has exactly one job — a router per
+feature area, shared services (database, push) that any router can use, and a
+single security dependency protecting anything that needs a logged-in user.
+
+```mermaid
+flowchart TB
+    Client(["Incoming request"])
+    Main["main.py<br/>registers routers"]
+    Auth["routers/auth_routes.py<br/>/auth/apple, /auth/google, /me"]
+    Loc["routers/location.py<br/>/location"]
+    Pair["routers/pairing.py<br/>/pairing/create, /pairing/join"]
+    Dep["dependencies.py<br/>get_current_user"]
+    AuthLib["auth.py<br/>token verification"]
+    DB["database.py<br/>engine, async_session"]
+    Models["models.py<br/>SQLAlchemy tables"]
+    Push["push.py<br/>APNs client"]
+
+    Client --> Main
+    Main --> Auth
+    Main --> Loc
+    Main --> Pair
+
+    Auth --> AuthLib
+    Auth --> DB
+    Auth --> Models
+
+    Loc --> DB
+    Loc --> Push
+    Loc --> Models
+
+    Pair --> Dep
+    Pair --> DB
+    Pair --> Models
+
+    Dep --> AuthLib
+    Dep --> DB
+    Dep --> Models
+```
+
 ## Tech stack
 
 | Layer | Technology |
