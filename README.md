@@ -69,6 +69,44 @@ A few deliberate engineering choices worth calling out:
 - **Privacy is the architecture, not a setting** — the database schema physically can't hold a
   location history because each update overwrites the last.
 
+### Backend code structure
+
+The FastAPI backend is organized so each file has exactly one job — a router per
+feature area, shared services (database, push) that any router can use, and a
+single security dependency protecting anything that needs a logged-in user.
+
+```mermaid
+flowchart LR
+    Client(["Incoming request"]) --> Main["main.py<br/>registers routers"]
+
+    subgraph Routers["Routers (routers/)"]
+        direction TB
+        Auth["auth_routes.py<br/>/auth/apple, /auth/google, /me"]
+        Loc["location.py<br/>/location"]
+        Pair["pairing.py<br/>/pairing/create, /pairing/join"]
+    end
+
+    Main --> Auth
+    Main --> Loc
+    Main --> Pair
+
+    Auth --> Dep["dependencies.py<br/>get_current_user"]
+    Pair --> Dep
+
+    subgraph Shared["Shared services"]
+        direction TB
+        AuthLib["auth.py<br/>token verification"]
+        DB["database.py<br/>engine, async_session"]
+        Models["models.py<br/>SQLAlchemy tables"]
+        Push["push.py<br/>APNs client"]
+    end
+
+    Auth --> Shared
+    Loc --> Shared
+    Pair --> Shared
+    Dep --> Shared
+```
+
 ## Tech stack
 
 | Layer | Technology |
@@ -85,8 +123,8 @@ A few deliberate engineering choices worth calling out:
 
 Built in phases that front-load the riskiest, least-glamorous parts first.
 
-- [ ] **Phase 0** — De-risk the core loop: location → backend → silent push → measure freshness
-- [ ] **Phase 1** — Backend + account pairing (FastAPI, PostgreSQL, auth, 6-digit pairing codes)
+- [x] **Phase 0** — De-risk the core loop: location → backend → silent push → measure freshness
+- [x] **Phase 1** — Backend + account pairing (FastAPI, PostgreSQL, auth, 6-digit pairing codes)
 - [ ] **Phase 2** — iOS location engine (significant-location-change reporting + permissions)
 - [ ] **Phase 3** — APNs silent push fan-out
 - [ ] **Phase 4** — watchOS app, complication, and distance/bearing math
