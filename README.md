@@ -126,8 +126,8 @@ flowchart TB
 
 Built in phases that front-load the riskiest, least-glamorous parts first.
 
-- [ ] **Phase 0** — De-risk the core loop: location → backend → silent push → measure freshness
-- [ ] **Phase 1** — Backend + account pairing (FastAPI, PostgreSQL, auth, 6-digit pairing codes)
+- [x] **Phase 0** — De-risk the core loop: location → backend → silent push → measure freshness
+- [x] **Phase 1** — Backend + account pairing (FastAPI, PostgreSQL, auth, 6-digit pairing codes)
 - [ ] **Phase 2** — iOS location engine (significant-location-change reporting + permissions)
 - [ ] **Phase 3** — APNs silent push fan-out
 - [ ] **Phase 4** — watchOS app, complication, and distance/bearing math
