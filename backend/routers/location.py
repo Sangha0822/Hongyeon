@@ -1,5 +1,4 @@
 import os
-import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -11,7 +10,6 @@ from dependencies import get_current_user
 
 router = APIRouter()
 
-TEST_USER_ID = uuid.UUID("39cd8fb9-60b0-4fa3-ac0c-ad01051845e3")
 
 class Location(BaseModel):
     lat: float
@@ -45,9 +43,14 @@ async def post_location(location: Location, current_user: User = Depends(get_cur
     return {"status": "received"}
 
 @router.get("/location")
-async def get_location():
+async def get_location(current_user: User = Depends(get_current_user)):
+    if current_user.partner_id is None:
+        return {"paired": False, "lat": None, "lng": None, "updated_at": None}
+
     async with async_session() as session:
-        state = await session.get(LocationState, TEST_USER_ID)
-        if state is None:
-            return {}
-        return {"lat": state.lat, "lng": state.lng, "updated_at": state.updated_at}
+        state = await session.get(LocationState, current_user.partner_id)
+
+    if state is None:
+        return {"paired": True, "lat": None, "lng": None, "updated_at": None}
+
+    return {"paired": True, "lat": state.lat, "lng": state.lng, "updated_at": state.updated_at}
