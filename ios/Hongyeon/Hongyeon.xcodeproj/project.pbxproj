@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F1DDB1C2304D6229003F796C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F1DDB1C1304D6229003F796C /* GoogleSignIn */; };
 		F1DDB1C4304D6229003F796C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F1DDB1C3304D6229003F796C /* GoogleSignInSwift */; };
+		F1DDB1EE30502E58003F796C /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = F1DDB1ED30502E58003F796C /* KeychainAccess */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 			files = (
 				F1DDB1C2304D6229003F796C /* GoogleSignIn in Frameworks */,
 				F1DDB1C4304D6229003F796C /* GoogleSignInSwift in Frameworks */,
+				F1DDB1EE30502E58003F796C /* KeychainAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				F1DDB1C1304D6229003F796C /* GoogleSignIn */,
 				F1DDB1C3304D6229003F796C /* GoogleSignInSwift */,
+				F1DDB1ED30502E58003F796C /* KeychainAccess */,
 			);
 			productName = Hongyeon;
 			productReference = F10144F6303DD77C006D87D7 /* Hongyeon.app */;
@@ -118,6 +121,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				F1DDB1EC30502E58003F796C /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F10144F7303DD77C006D87D7 /* Products */;
@@ -375,6 +379,14 @@
 				minimumVersion = 10.0.0;
 			};
 		};
+		F1DDB1EC30502E58003F796C /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -387,6 +399,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1DDB1C0304D6229003F796C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		F1DDB1ED30502E58003F796C /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1DDB1EC30502E58003F796C /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
