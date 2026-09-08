@@ -18,11 +18,21 @@ struct ContentView: View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
             
+            
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
             Button("Upgrade to Always") {
                 locationManager.requestAlwaysPermission()
+            }
+            Button("Save Test Token") {
+                SessionStore.save("test-jwt-12345")
+            }
+            Button("Load Test Token") {
+                print("Loaded: \(SessionStore.load() ?? "nothing found")")
+            }
+            Button("Clear Test Token") {
+                SessionStore.clear()
             }
             Button("Get My Location") {
                 locationManager.requestLocation()

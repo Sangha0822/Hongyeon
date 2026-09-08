@@ -75,6 +75,8 @@ The FastAPI backend is organized so each file has exactly one job — a router p
 feature area, shared services (database, push) that any router can use, and a
 single security dependency protecting anything that needs a logged-in user.
 
+[Interactive version with a step-by-step request trace](https://claude.ai/code/artifact/148725ae-e70a-415e-926b-24a6e074c042)
+
 ```mermaid
 flowchart LR
     Client(["Incoming request"]) --> Main["main.py<br/>registers routers"]
