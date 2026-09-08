@@ -1,12 +1,13 @@
 import os
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from aioapns import NotificationRequest, PushType
 from database import async_session
-from models import LocationState
+from models import LocationState, User
 from push import get_apns_client
+from dependencies import get_current_user
 
 router = APIRouter()
 
@@ -17,11 +18,11 @@ class Location(BaseModel):
     lng: float
 
 @router.post("/location")
-async def post_location(location: Location):
+async def post_location(location: Location, current_user: User = Depends(get_current_user)):
     async with async_session() as session:
-        state = await session.get(LocationState, TEST_USER_ID)
+        state = await session.get(LocationState, current_user.id)
         if state is None:
-            state = LocationState(user_id=TEST_USER_ID)
+            state = LocationState(user_id=current_user.id)
             session.add(state)
         state.lat = location.lat
         state.lng = location.lng
