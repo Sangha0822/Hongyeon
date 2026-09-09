@@ -71,7 +71,9 @@ struct ContentView: View {
                         return
                     }
                     if let idToken = result?.user.idToken?.tokenString {
-                        print("Google identity token: \(idToken)")
+                        Task {
+                            await signIn(endpoint: "auth/google", identityToken: idToken)
+                        }
                     }
                 }
             }
@@ -84,7 +86,9 @@ struct ContentView: View {
                     if let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
                        let identityTokenData = credential.identityToken,
                        let identityTokenString = String(data: identityTokenData, encoding: .utf8) {
-                        print("Apple identity token: \(identityTokenString)")
+                        Task {
+                            await signIn(endpoint: "auth/apple", identityToken: identityTokenString)
+                        }
                     }
                 case .failure(let error):
                     print("Sign in with Apple failed: \(error.localizedDescription)")
