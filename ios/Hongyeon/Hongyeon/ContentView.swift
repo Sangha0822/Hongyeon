@@ -20,8 +20,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
-            
-            
+
             Button("Request Location Permission") {
                 locationManager.requestPermission()
             }
