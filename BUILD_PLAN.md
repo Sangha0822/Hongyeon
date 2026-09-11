@@ -130,18 +130,25 @@ Significant-location-change reporting, the permission onboarding screen
 Apple Developer certificates/keys, the FastAPI logic that receives A's location
 and fires a silent push to B. Treat delivery as best-effort throughout.
 
-### Phase 4 — watchOS app + complication + math
+### Phase 4 — UI & navigation design
+Replace the debug-button pile in ContentView with real screens and real
+navigation across sign-in, pairing, and the main app. Decide what happens to
+the existing test tooling (hidden dev menu, or removed). Deliberately placed
+here, before the watchOS app, so both platforms build on a clean foundation
+together rather than compounding more debug UI across later phases.
+
+### Phase 5 — watchOS app + complication + math
 The watch app, the WidgetKit complication ("N mi away · updated Xm ago"), the
 haversine distance calc, and the on-device bearing + compass-heading arrow.
 
-### Phase 5 — Live Activity + foreground live compass
+### Phase 6 — Live Activity + foreground live compass
 The "you're close" Live Activity as the entry point; opening the watch app gives
 the real-time foreground compass (polling every ~2–3s).
 
-### Phase 6 — Polish & later work
+### Phase 7 — Polish & later work
 WebSocket upgrade, iPhone widget, extra features, and App Store submission prep.
 
-### Beyond Phase 6 — Hongyeon as a couple app, not just a location app
+### Beyond Phase 7 — Hongyeon as a couple app, not just a location app
 
 A pure "where's my partner" app has a real ceiling: it's inherently passive,
 with little to actually *do* day-to-day beyond glancing at a distance. The
