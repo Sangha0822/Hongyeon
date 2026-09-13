@@ -53,3 +53,18 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
 
     return {"partner_id": str(creator.id)}
 
+@router.post("/pairing/unpair")
+async def unpair(current_user: User = Depends(get_current_user)):
+    async with async_session() as session:
+        user = await session.get(User, current_user.id)
+
+        if user.partner_id is None:
+            return {"unpaired": False, "detail": "You are not currently paired"}
+
+        partner = await session.get(User, user.partner_id)
+        user.partner_id = None
+        if partner is not None:
+            partner.partner_id = None
+
+        await session.commit()
+    return {"unpaired": True}
