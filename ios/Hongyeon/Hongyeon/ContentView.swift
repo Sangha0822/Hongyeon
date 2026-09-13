@@ -20,6 +20,13 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
+            
+            Button("Disconnect Pairing") {
+                Task {
+                    let success = await unpairPartner()
+                    pairingStatus = success ? "Disconnected" : "Failed to disconnect"
+                }
+            }
 
             Button("Request Location Permission") {
                 locationManager.requestPermission()

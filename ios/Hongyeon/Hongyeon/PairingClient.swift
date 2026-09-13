@@ -41,3 +41,20 @@ func joinPairingCode(_ code: String) async -> Bool {
         return false
     }
 }
+
+func unpairPartner() async -> Bool {
+    guard let token = SessionStore.load() else { return false }
+    let url = URL(string: "https://hongyeon-api.onrender.com/pairing/unpair")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+    do {
+        let (_, response) = try await URLSession.shared.data(for: request)
+        return (response as? HTTPURLResponse)?.statusCode == 200
+    } catch {
+        print("Unpair failed: \(error.localizedDescription)")
+        return false
+    }
+}
+
