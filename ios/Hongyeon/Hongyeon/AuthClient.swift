@@ -19,6 +19,7 @@ func signIn(endpoint: String, identityToken: String) async {
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         if let token = json?["token"] as? String {
             SessionStore.save(token)
+            registerDeviceTokenIfReady()
         }
     } catch {
         print("Sign-in request failed: \(error.localizedDescription)")
