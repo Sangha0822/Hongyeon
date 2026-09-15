@@ -866,4 +866,28 @@ really testing that thing.
 
 ---
 
+---
+
+### Issue #82 — Register device tokens against the authenticated user
+
+**What a "delegate" actually is**
+
+`AppDelegate.swift` has methods like `didFinishLaunchingWithOptions` that I
+never call myself — iOS calls them *on* my `AppDelegate` object at specific
+lifecycle moments. That's the delegate pattern: instead of code running
+top-to-bottom, I hand the system a set of methods and it calls whichever
+one applies when something happens.
+
+Device tokens work the same way: `didRegisterForRemoteNotificationsWithDeviceToken`
+is a delegate method iOS calls once it finishes registering the app with
+Apple's push servers and has a real token ready. It's asynchronous — not
+something readable on demand — because getting a token requires a round
+trip to Apple's servers; it doesn't exist locally until Apple issues it
+back. This is also why token-arrival and sign-in-completing are two
+independent async events with no guaranteed order, which is the actual
+reason #82 needs "send once both exist" logic instead of sending on
+either event alone.
+
+---
+
 *(To be continued as we go...)*

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from database import engine
-from routers import auth_routes, location, pairing
+from routers import auth_routes, location, pairing, device
 
 app = FastAPI()
 
@@ -14,3 +14,4 @@ async def health_check():
 app.include_router(auth_routes.router)
 app.include_router(location.router)
 app.include_router(pairing.router)
+app.include_router(device.router)
