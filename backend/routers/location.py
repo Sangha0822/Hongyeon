@@ -38,6 +38,11 @@ async def post_location(location: Location, current_user: User = Depends(get_cur
             try:
                 response = await get_apns_client().send_notification(push_request)
                 print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
+                if response.description == "BadDeviceToken" or response.description == "Unregistered":
+                    async with async_session() as session:
+                        partner = await session.get(User, partner.id)
+                        partner.apns_token = None
+                        await session.commit()
             except Exception as e:
                 print(f"Push send failed: {e}")
 
