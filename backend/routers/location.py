@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -27,18 +26,20 @@ async def post_location(location: Location, current_user: User = Depends(get_cur
         state.updated_at = datetime.now(timezone.utc)
         await session.commit()
 
-    notify_token = os.environ.get("NOTIFY_DEVICE_TOKEN")
-    if notify_token:
-        push_request = NotificationRequest(
-            device_token=notify_token,
-            message={"aps": {"content-available": 1}},
-            push_type=PushType.BACKGROUND,
-        )
-        try:
-            response = await get_apns_client().send_notification(push_request)
-            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
-        except Exception as e:
-            print(f"Push send failed: {e}")
+    if current_user.partner_id is not None:
+        async with async_session() as session:
+            partner = await session.get(User, current_user.partner_id)
+        if partner is not None and partner.apns_token:
+            push_request = NotificationRequest(
+                device_token=partner.apns_token,
+                message={"aps": {"content-available": 1}},
+                push_type=PushType.BACKGROUND,
+            )
+            try:
+                response = await get_apns_client().send_notification(push_request)
+                print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
+            except Exception as e:
+                print(f"Push send failed: {e}")
 
     return {"status": "received"}
 
