@@ -40,52 +40,17 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard let location = locations.last else { return }
         lastLocation = location
         Task {
-            await sendLocation()
+            postStatus = await postLocation(location)
         }
     }
-    
-    
+
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error: \(error.localizedDescription)")
     }
-    
+
     @Published var postStatus: String = ""
-    
-    func sendLocation() async {
-        guard let location = lastLocation else {
-            postStatus = "No location yet"
-            return
-        }
-        
-        guard let token = SessionStore.load() else {
-            postStatus = "Not signed in"
-            return
-        }
-        
-        let url = URL(string: "https://hongyeon-api.onrender.com/location")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let body: [String: Double] = [
-            "lat": location.coordinate.latitude,
-            "lng": location.coordinate.longitude
-        ]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                postStatus = "Sent successfully!"
-            } else {
-                postStatus = "Server error"
-            }
-        } catch {
-            postStatus = "Network error: \(error.localizedDescription)"
-        }
-    }
-    
+
     func requestAlwaysPermission() {
         manager.requestAlwaysAuthorization()
     }
