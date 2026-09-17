@@ -41,9 +41,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         displayFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
         let koreaTime = displayFormatter.string(from: receivedAt)
 
+        guard let token = SessionStore.load() else {
+            logFreshnessEntry("FAILURE at \(koreaTime) KST: not signed in")
+            return
+        }
+
         guard let url = URL(string: "https://hongyeon-api.onrender.com/location") else { return }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await URLSession.shared.data(for: request)
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
             print("Fetched partner location: \(json)")
 
