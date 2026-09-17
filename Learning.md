@@ -890,4 +890,44 @@ either event alone.
 
 ---
 
+---
+
+### Issue #84 — Verify real end-to-end push delivery between two paired real devices
+
+**A silent bug that survived two whole issues unnoticed**
+
+`fetchPartnerLocation` (in `AppDelegate.swift`) was written back in issue #15,
+before authentication existed on any endpoint. When issue #63 later added
+`Depends(get_current_user)` to `GET /location`, this function never got
+updated to send an `Authorization` header - it kept calling
+`URLSession.shared.data(from: url)` with no token at all. Every real push
+after that point woke the receiving device successfully, but its follow-up
+GET was silently rejected with 401.
+
+**Why it went completely unnoticed - not even a failure was logged**
+
+`URLSession.shared.data(from:)` only throws for network-level failures
+(no connection, timeout), never for HTTP error status codes. A 401
+response still comes back as valid, parseable JSON - it just has no
+`updated_at` key in it. The existing code's `if let updatedAtString =
+json["updated_at"] as? String` silently failed and the function simply
+ended, logging neither a `SUCCESS` nor a `FAILURE` entry. This is why the
+freshness log showed nothing at all during testing, rather than a visible
+error - a completely quiet failure mode is much easier to miss than a
+loud one.
+
+**Fix:** switched to `URLSession.shared.data(for: request)`, built a real
+`URLRequest` carrying the stored session JWT (loaded via
+`SessionStore.load()`, same pattern as `LocationManager.sendLocation()`),
+and added a `guard` that logs a `FAILURE` entry if no session exists at
+all, instead of failing silently.
+
+**Lesson going forward:** this bug could only be caught by a genuine
+two-device, real-push, real-fetch test - exactly what this issue was
+for. Every prior test of this exact function happened before auth
+existed, so nothing ever exercised this code path against a protected
+endpoint until now.
+
+---
+
 *(To be continued as we go...)*
