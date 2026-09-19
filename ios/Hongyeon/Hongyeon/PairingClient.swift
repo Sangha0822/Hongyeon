@@ -35,7 +35,12 @@ func joinPairingCode(_ code: String) async -> Bool {
 
     do {
         let (_, response) = try await URLSession.shared.data(for: request)
-        return (response as? HTTPURLResponse)?.statusCode == 200
+        let success = (response as? HTTPURLResponse)?.statusCode == 200
+        if success {
+            await AppState.shared.refresh()
+        }
+        return success
+
     } catch {
         print("Join pairing code failed: \(error.localizedDescription)")
         return false
@@ -51,7 +56,12 @@ func unpairPartner() async -> Bool {
 
     do {
         let (_, response) = try await URLSession.shared.data(for: request)
-        return (response as? HTTPURLResponse)?.statusCode == 200
+        let success = (response as? HTTPURLResponse)?.statusCode == 200
+        if success {
+            await AppState.shared.refresh()
+        }
+        return success
+
     } catch {
         print("Unpair failed: \(error.localizedDescription)")
         return false
