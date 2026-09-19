@@ -54,4 +54,5 @@ async def auth_google(request: GoogleAuthRequest):
 
 @router.get("/me")
 async def read_me(current_user: User = Depends(get_current_user)):
-    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider}
+    paired_bool = False if current_user.partner_id is None else True
+    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider, "paired": paired_bool}
