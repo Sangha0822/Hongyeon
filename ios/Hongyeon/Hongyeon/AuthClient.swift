@@ -20,6 +20,7 @@ func signIn(endpoint: String, identityToken: String) async {
         if let token = json?["token"] as? String {
             SessionStore.save(token)
             registerDeviceTokenIfReady()
+            await AppState.shared.refresh()
         }
     } catch {
         print("Sign-in request failed: \(error.localizedDescription)")

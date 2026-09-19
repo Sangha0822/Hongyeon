@@ -11,10 +11,15 @@ struct RootView: View {
     @ObservedObject private var locationManager = LocationManager.shared
 
     var body: some View {
-        if locationManager.authorizationStatus == .notDetermined {
-            LocationOnboardingView()
-        } else {
-            ContentView()
+        Group {
+            if locationManager.authorizationStatus == .notDetermined {
+                LocationOnboardingView()
+            } else {
+                ContentView()
+            }
+        }
+        .task {
+            await AppState.shared.refresh()
         }
     }
 }
