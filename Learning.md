@@ -930,4 +930,35 @@ endpoint until now.
 
 ---
 
+---
+
+### Issue #97 — Research design direction and establish a visual style
+
+**Design references used**
+
+Looked at Apple's Human Interface Guidelines (developer.apple.com/design)
+for what feels native on iOS, and Mobbin (mobbin.com) for how other real,
+shipped apps handle sign-in and account-linking flows specifically.
+
+**Palette choice tied to the app's own name**
+
+"Hongyeon" (홍연) is the Korean term for the mythological "red thread of
+fate" said to connect soulmates - so the visual style leans into warm
+coral/red tones (`Theme.accent`, `#E8555A`) on a warm cream background
+(`#FFF8F5`) instead of picking colors arbitrarily.
+
+**A real infrastructure gotcha, not a code bug: Render free-tier cold starts**
+
+After signing in, the app sometimes took 20-30 seconds to reach the main
+screen. Confirmed via a simple test - sign out, then immediately sign
+back in again - that the *second* attempt was instant. This is Render's
+free tier spinning the backend down after a period of inactivity; the
+first request after that has to wait for the server to wake back up.
+Not a bug in the sign-in code, and not something to fix now - the build
+plan already anticipates moving to a paid tier as the app grows, which
+removes this entirely. Worth remembering as the first thing to suspect
+if a request seems randomly, inconsistently slow.
+
+---
+
 *(To be continued as we go...)*
