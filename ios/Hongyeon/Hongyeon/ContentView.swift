@@ -11,8 +11,6 @@ import CoreLocation
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager.shared
     @State private var freshnessLog: [String] = []
-    @State private var pairingCode: String = ""
-    @State private var enteredCode: String = ""
     @State private var pairingStatus: String = ""
 
     var body: some View {
@@ -64,28 +62,6 @@ struct ContentView: View {
                 Text(entry)
                     .font(.caption)
             }
-            
-            
-            Button("Create Pairing Code") {
-                Task {
-                    if let code = await createPairingCode() {
-                        pairingCode = code
-                    }
-                }
-            }
-            Text(pairingCode.isEmpty ? "No code yet" : "Your code: \(pairingCode)")
-
-            TextField("Enter partner's code", text: $enteredCode)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal)
-
-            Button("Join Pairing") {
-                Task {
-                    let success = await joinPairingCode(enteredCode)
-                    pairingStatus = success ? "Paired!" : "Failed to pair"
-                }
-            }
-            Text(pairingStatus)
         }
         .onAppear {
             freshnessLog = UserDefaults.standard.stringArray(forKey: "freshnessLog") ?? []
