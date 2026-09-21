@@ -19,7 +19,7 @@ struct RootView: View {
             } else if locationManager.authorizationStatus == .notDetermined {
                 LocationOnboardingView()
             } else if !appState.isPaired {
-                PairingPlaceholderView()
+                PairingView()
             } else {
                 ContentView()
             }
@@ -27,11 +27,5 @@ struct RootView: View {
         .task {
             await AppState.shared.refresh()
         }
-    }
-}
-
-struct PairingPlaceholderView: View {
-    var body: some View {
-        Text("Pairing screen coming in issue #94")
     }
 }

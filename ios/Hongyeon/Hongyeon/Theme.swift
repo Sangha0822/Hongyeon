@@ -10,6 +10,7 @@ import SwiftUI
 enum Theme {
     static let accent = Color(red: 0.91, green: 0.33, blue: 0.35)
     static let background = Color(red: 1.0, green: 0.97, blue: 0.96)
+    static let cardBackground = Color(red: 1.0, green: 0.99, blue: 0.98)
     static let textPrimary = Color(red: 0.18, green: 0.14, blue: 0.13)
 
     static let titleFont = Font.system(size: 28, weight: .bold, design: .rounded)
