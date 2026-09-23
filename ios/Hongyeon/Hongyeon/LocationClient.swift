@@ -37,6 +37,28 @@ func postLocation(_ location: CLLocation) async -> String {
     }
 }
 
+func fetchPartnerLocationStatus() async -> Date? {
+    guard let token = SessionStore.load() else { return nil }
+
+    let url = URL(string: "https://hongyeon-api.onrender.com/location")!
+    var request = URLRequest(url: url)
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+    do {
+        let (data, _) = try await URLSession.shared.data(for: request)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        guard let updatedAtString = json["updated_at"] as? String else { return nil }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return isoFormatter.date(from: updatedAtString)
+    } catch {
+        print("Failed to fetch partner location status: \(error.localizedDescription)")
+        return nil
+    }
+}
+
+
 func fetchPartnerLocation(receivedAt: Date) async {
     let displayFormatter = DateFormatter()
     displayFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
