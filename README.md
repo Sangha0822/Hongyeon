@@ -129,7 +129,7 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 - [x] **Phase 1** — Backend + account pairing (FastAPI, PostgreSQL, auth, 6-digit pairing codes)
 - [x] **Phase 2** — iOS location engine (significant-location-change reporting + permissions)
 - [x] **Phase 3** — APNs silent push fan-out
-- [ ] **Phase 4** — UI & navigation design (real screens, real navigation)
+- [x] **Phase 4** — UI & navigation design (real screens, real navigation)
 - [ ] **Phase 5** — watchOS app, complication, and distance/bearing math
 - [ ] **Phase 6** — "You're close" Live Activity + live foreground compass
 - [ ] **Phase 7** — Polish, WebSocket upgrade, iPhone widget, App Store submission
