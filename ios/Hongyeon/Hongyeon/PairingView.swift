@@ -47,6 +47,11 @@ struct PairingView: View {
                                     Image(systemName: "doc.on.doc")
                                         .foregroundColor(Theme.accent)
                                 }
+
+                                ShareLink(item: pairingCode) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundColor(Theme.accent)
+                                }
                             }
                         }
                         .padding()
