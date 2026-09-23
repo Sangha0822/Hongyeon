@@ -21,7 +21,7 @@ struct RootView: View {
             } else if !appState.isPaired {
                 PairingView()
             } else {
-                ContentView()
+                HomeView()
             }
         }
         .task {

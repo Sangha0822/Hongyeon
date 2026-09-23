@@ -11,18 +11,10 @@ import CoreLocation
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager.shared
     @State private var freshnessLog: [String] = []
-    @State private var pairingStatus: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
             Text("Location status: \(statusText)")
-            
-            Button("Disconnect Pairing") {
-                Task {
-                    let success = await unpairPartner()
-                    pairingStatus = success ? "Disconnected" : "Failed to disconnect"
-                }
-            }
 
             Button("Request Location Permission") {
                 locationManager.requestPermission()
