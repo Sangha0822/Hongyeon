@@ -10,6 +10,8 @@ import SwiftUI
 struct HomeView: View {
     @State private var lastActiveText = "Checking..."
     @State private var pairingStatus = ""
+    @State private var titleTapCount = 0
+    @State private var showDevMenu = false
 
     var body: some View {
         ZStack {
@@ -21,6 +23,13 @@ struct HomeView: View {
                 Text("You're Connected!")
                     .font(Theme.titleFont)
                     .foregroundColor(Theme.accent)
+                    .onTapGesture {
+                        titleTapCount += 1
+                        if titleTapCount >= 5 {
+                            titleTapCount = 0
+                            showDevMenu = true
+                        }
+                    }
 
                 Text(lastActiveText)
                     .font(Theme.bodyFont)
@@ -53,6 +62,9 @@ struct HomeView: View {
             } else {
                 lastActiveText = "No location from your partner yet"
             }
+        }
+        .sheet(isPresented: $showDevMenu) {
+            DevMenuView()
         }
     }
 }

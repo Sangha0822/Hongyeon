@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  DevMenuView.swift
 //  Hongyeon
 //
 //  Created by Sangha Jeon on 8/25/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 import CoreLocation
 
-struct ContentView: View {
+struct DevMenuView: View {
     @StateObject private var locationManager = LocationManager.shared
     @State private var freshnessLog: [String] = []
 
@@ -86,5 +86,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    DevMenuView()
 }
