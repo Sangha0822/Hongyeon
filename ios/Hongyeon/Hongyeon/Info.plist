@@ -6,6 +6,11 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 	<key>GIDClientID</key>
 	<string>287981043819-0fb11ma0d2aqbb8dee2cha8c1j2jsji7.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
