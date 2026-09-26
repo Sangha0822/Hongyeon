@@ -51,10 +51,32 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
         creator.partner_id = joiner.id
         joiner.partner_id = creator.id
 
+        creator_token = creator.apns_token
+        creator_id = creator.id
+
         await session.delete(pairing_code)
         await session.commit()
 
+    if creator_token:
+        push_request = NotificationRequest(
+            device_token=creator_token,
+            message={"aps": {"content-available": 1}},
+            push_type=PushType.BACKGROUND,
+        )
+        try:
+            response = await get_apns_client().send_notification(push_request)
+            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
+
+            if response.description == "BadDeviceToken" or response.description == "Unregistered":
+                async with async_session() as session:
+                    stale_creator = await session.get(User, creator_id)
+                    stale_creator.apns_token = None
+                    await session.commit()
+        except Exception as e:
+            print(f"Push send failed: {e}")
+
     return {"partner_id": str(creator.id)}
+
 
 @router.post("/pairing/unpair")
 async def unpair(current_user: User = Depends(get_current_user)):
