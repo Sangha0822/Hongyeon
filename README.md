@@ -130,9 +130,12 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 - [x] **Phase 2** — iOS location engine (significant-location-change reporting + permissions)
 - [x] **Phase 3** — APNs silent push fan-out
 - [x] **Phase 4** — UI & navigation design (real screens, real navigation)
-- [ ] **Phase 5** — watchOS app, complication, and distance/bearing math
-- [ ] **Phase 6** — "You're close" Live Activity + live foreground compass
-- [ ] **Phase 7** — Polish, WebSocket upgrade, iPhone widget, App Store submission
+- [ ] **Phase 5** — Distance & direction on iPhone (real distance + on-device bearing math)
+- [ ] **Phase 6** — Tap-to-notify "thinking of you" (first visible push in the project)
+- [ ] **Phase 7** — Shared diary between partners
+- [ ] **Phase 8** — watchOS app, complication, reusing Phase 5's distance/bearing math
+- [ ] **Phase 9** — "You're close" Live Activity + live foreground compass
+- [ ] **Phase 10** — Polish, WebSocket upgrade, iPhone widget (red-thread distance visual), App Store submission
 
 ## Running locally
 
