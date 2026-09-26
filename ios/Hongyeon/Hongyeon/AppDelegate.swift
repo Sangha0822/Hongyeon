@@ -30,6 +30,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         print("Received remote notification at \(receivedAt), app state: \(application.applicationState.rawValue)")
 
         Task {
+            await AppState.shared.refresh()
             await fetchPartnerLocation(receivedAt: receivedAt)
             completionHandler(.newData)
         }

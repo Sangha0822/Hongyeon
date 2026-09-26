@@ -2,9 +2,12 @@ import random
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from aioapns import NotificationRequest, PushType
 from database import async_session
 from models import User, PairingCode
+from push import get_apns_client
 from dependencies import get_current_user
+
 
 router = APIRouter()
 
@@ -62,9 +65,30 @@ async def unpair(current_user: User = Depends(get_current_user)):
             return {"unpaired": False, "detail": "You are not currently paired"}
 
         partner = await session.get(User, user.partner_id)
+        partner_token = partner.apns_token if partner is not None else None
+        partner_id = partner.id if partner is not None else None
         user.partner_id = None
         if partner is not None:
             partner.partner_id = None
 
         await session.commit()
+
+    if partner_token:
+        push_request = NotificationRequest(
+            device_token=partner_token,
+            message={"aps": {"content-available": 1}},
+            push_type=PushType.BACKGROUND,
+        )
+        try:
+            response = await get_apns_client().send_notification(push_request)
+            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
+
+            if response.description == "BadDeviceToken" or response.description == "Unregistered":
+                async with async_session() as session:
+                    stale_partner = await session.get(User, partner_id)
+                    stale_partner.apns_token = None
+                    await session.commit()
+        except Exception as e:
+            print(f"Push send failed: {e}")
+
     return {"unpaired": True}
