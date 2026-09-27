@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var lastActiveText = "Checking..."
     @State private var partnerStatus: PartnerLocationStatus? = nil
     @State private var pairingStatus = ""
+    @State private var displayedBearing: Double = 0
 
     var body: some View {
         ZStack {
@@ -28,12 +29,18 @@ struct HomeView: View {
                 Text(distanceText)
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
-                if let bearing = bearingDegrees {
-                                    Image(systemName: "arrow.up")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(Theme.accent)
-                                        .rotationEffect(.degrees(bearing))
-                                }
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 40))
+                    .foregroundColor(Theme.accent)
+                    .rotationEffect(.degrees(displayedBearing))
+                    .opacity(bearingDegrees != nil ? 1 : 0)
+                    .onChange(of: bearingDegrees) { _, newValue in
+                        if let newValue {
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                displayedBearing = newValue
+                            }
+                        }
+                    }
                 Text(lastActiveText)
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
