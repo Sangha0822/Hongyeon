@@ -47,7 +47,7 @@ struct HomeView: View {
             .padding(.horizontal, 32)
         }
         .task {
-            if let updatedAt = await fetchPartnerLocationStatus() {
+            if let status = await fetchPartnerLocationStatus(), let updatedAt = status.updatedAt {
                 let formatter = RelativeDateTimeFormatter()
                 lastActiveText = "Partner last active \(formatter.localizedString(for: updatedAt, relativeTo: Date()))"
             } else {
