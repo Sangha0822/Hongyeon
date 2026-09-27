@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var lastActiveText = "Checking..."
     @State private var partnerStatus: PartnerLocationStatus? = nil
     @State private var pairingStatus = ""
+    @State private var displayedBearing: Double = 0
 
     var body: some View {
         ZStack {
@@ -28,7 +29,18 @@ struct HomeView: View {
                 Text(distanceText)
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
-
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 40))
+                    .foregroundColor(Theme.accent)
+                    .rotationEffect(.degrees(displayedBearing))
+                    .opacity(bearingDegrees != nil ? 1 : 0)
+                    .onChange(of: bearingDegrees) { _, newValue in
+                        if let newValue {
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                displayedBearing = newValue
+                            }
+                        }
+                    }
                 Text(lastActiveText)
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
@@ -91,5 +103,19 @@ struct HomeView: View {
         let formatter = MeasurementFormatter()
         formatter.unitOptions = .naturalScale
         return formatter.string(from: measurement) + " away"
+    }
+    
+    private var bearingDegrees: Double? {
+        guard let partnerStatus = partnerStatus, let myLocation = locationManager.lastLocation else { return nil }
+
+        let lat1 = myLocation.coordinate.latitude * .pi / 180
+        let lat2 = partnerStatus.lat * .pi / 180
+        let deltaLon = (partnerStatus.lng - myLocation.coordinate.longitude) * .pi / 180
+
+        let y = sin(deltaLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLon)
+        let bearingRadians = atan2(y, x)
+        let bearingDegrees = bearingRadians * 180 / .pi
+        return (bearingDegrees + 360).truncatingRemainder(dividingBy: 360)
     }
 }
