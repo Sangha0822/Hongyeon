@@ -133,9 +133,10 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 - [ ] **Phase 5** — Distance & direction on iPhone (real distance + on-device bearing math)
 - [ ] **Phase 6** — Tap-to-notify "thinking of you" (first visible push in the project)
 - [ ] **Phase 7** — Shared diary between partners
-- [ ] **Phase 8** — watchOS app, complication, reusing Phase 5's distance/bearing math
-- [ ] **Phase 9** — "You're close" Live Activity + live foreground compass
-- [ ] **Phase 10** — Polish, WebSocket upgrade, iPhone widget (red-thread distance visual), App Store submission
+- [ ] **Phase 8** — Shared photo wall (photos hanging on a red-thread visual)
+- [ ] **Phase 9** — watchOS app, complication, reusing Phase 5's distance/bearing math
+- [ ] **Phase 10** — "You're close" Live Activity + live foreground compass
+- [ ] **Phase 11** — Polish, WebSocket upgrade, iPhone widget (red-thread distance visual), App Store submission
 
 ## Running locally
 

@@ -153,31 +153,37 @@ distinct from every prior background/silent push.
 A shared notes/diary page where both partners can write to each other -
 a new backend data model, real CRUD endpoints, and a real read/write UI.
 
-### Phase 8 — watchOS app + complication
+### Phase 8 — Shared photo wall
+Partners post photos to each other, displayed hanging along a red-thread
+visual (clothespin-style) - a literal nod to Hongyeon's own meaning.
+Needs real new infrastructure this project hasn't touched yet: image
+upload and storage.
+
+### Phase 9 — watchOS app + complication
 The watch app and the WidgetKit complication ("N mi away · updated Xm
 ago"), reusing the distance/bearing math already validated in Phase 5,
 plus the on-device compass-heading arrow.
 
-### Phase 9 — Live Activity + foreground live compass
+### Phase 10 — Live Activity + foreground live compass
 The "you're close" Live Activity as the entry point; opening the watch app gives
 the real-time foreground compass (polling every ~2–3s).
 
-### Phase 10 — Polish & later work
+### Phase 11 — Polish & later work
 WebSocket upgrade, an iPhone home screen widget (showing distance via a
 red-thread visual that changes based on how close/far apart the partners
 are), extra features, and App Store submission prep.
 
-### Beyond Phase 10 — Hongyeon as a couple app, not just a location app
+### Beyond Phase 11 — Hongyeon as a couple app, not just a location app
 
 A pure "where's my partner" app has a real ceiling: it's inherently passive,
 with little to actually *do* day-to-day beyond glancing at a distance. The
 long-term direction is for location/proximity to be Hongyeon's **anchor**
-feature, not its only one — expanding later into things like streaks,
-photo sharing, or a shared calendar, similar to how most successful
-long-distance-couple apps evolve.
+feature, not its only one — expanding later into things like streaks or a
+shared calendar, similar to how most successful long-distance-couple apps
+evolve.
 
 This is explicitly a **future direction, not current scope** — nothing
-here changes the priority of Phases 0–9 above. Location has to fully ship
+here changes the priority of Phases 0–10 above. Location has to fully ship
 first. Revisit once the core proximity loop is live and stable, not before.
 
 ---
