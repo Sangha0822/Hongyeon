@@ -131,12 +131,13 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 - [x] **Phase 3** — APNs silent push fan-out
 - [x] **Phase 4** — UI & navigation design (real screens, real navigation)
 - [ ] **Phase 5** — Distance & direction on iPhone (real distance + on-device bearing math)
-- [ ] **Phase 6** — Tap-to-notify "thinking of you" (first visible push in the project)
-- [ ] **Phase 7** — Shared diary between partners
-- [ ] **Phase 8** — Shared photo wall (photos hanging on a red-thread visual)
-- [ ] **Phase 9** — watchOS app, complication, reusing Phase 5's distance/bearing math
-- [ ] **Phase 10** — "You're close" Live Activity + live foreground compass
-- [ ] **Phase 11** — Polish, WebSocket upgrade, iPhone widget (red-thread distance visual), App Store submission
+- [ ] **Phase 6** — Onboarding questionnaire (display name + relationship anniversary)
+- [ ] **Phase 7** — Tap-to-notify "thinking of you" (first visible push in the project)
+- [ ] **Phase 8** — Shared diary between partners
+- [ ] **Phase 9** — Shared photo wall (photos hanging on a red-thread visual)
+- [ ] **Phase 10** — watchOS app, complication, reusing Phase 5's distance/bearing math
+- [ ] **Phase 11** — "You're close" Live Activity + live foreground compass
+- [ ] **Phase 12** — Polish, WebSocket upgrade, iPhone widget (red-thread distance visual), App Store submission
 
 ## Running locally
 

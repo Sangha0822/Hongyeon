@@ -144,46 +144,53 @@ partners' lat/lng) shown together on the home screen, replacing the plain
 "last active" text. Validates the core proximity math and UX on a platform
 we already have full command of, before porting it to watchOS.
 
-### Phase 6 — Tap-to-notify "thinking of you"
+### Phase 6 — Onboarding questionnaire
+Collects a display name and the relationship's anniversary date right
+after sign-in, before pairing - powers a "Day N together" counter and
+lets the app refer to partners by name instead of generically. A
+near-universal pattern in this app category, especially in Korean
+couple-app culture, which fits Hongyeon's own theme directly.
+
+### Phase 7 — Tap-to-notify "thinking of you"
 A tap on the home screen sends the partner a real, visible push
 notification - the first visible (non-silent) push in the project,
 distinct from every prior background/silent push.
 
-### Phase 7 — Shared diary
+### Phase 8 — Shared diary
 A shared notes/diary page where both partners can write to each other -
 a new backend data model, real CRUD endpoints, and a real read/write UI.
 
-### Phase 8 — Shared photo wall
+### Phase 9 — Shared photo wall
 Partners post photos to each other, displayed hanging along a red-thread
 visual (clothespin-style) - a literal nod to Hongyeon's own meaning.
 Needs real new infrastructure this project hasn't touched yet: image
 upload and storage.
 
-### Phase 9 — watchOS app + complication
+### Phase 10 — watchOS app + complication
 The watch app and the WidgetKit complication ("N mi away · updated Xm
 ago"), reusing the distance/bearing math already validated in Phase 5,
 plus the on-device compass-heading arrow.
 
-### Phase 10 — Live Activity + foreground live compass
+### Phase 11 — Live Activity + foreground live compass
 The "you're close" Live Activity as the entry point; opening the watch app gives
 the real-time foreground compass (polling every ~2–3s).
 
-### Phase 11 — Polish & later work
+### Phase 12 — Polish & later work
 WebSocket upgrade, an iPhone home screen widget (showing distance via a
 red-thread visual that changes based on how close/far apart the partners
 are), extra features, and App Store submission prep.
 
-### Beyond Phase 11 — Hongyeon as a couple app, not just a location app
+### Beyond Phase 12 — Hongyeon as a couple app, not just a location app
 
 A pure "where's my partner" app has a real ceiling: it's inherently passive,
 with little to actually *do* day-to-day beyond glancing at a distance. The
 long-term direction is for location/proximity to be Hongyeon's **anchor**
-feature, not its only one — expanding later into things like streaks or a
-shared calendar, similar to how most successful long-distance-couple apps
-evolve.
+feature, not its only one — expanding later into things like a couple
+nickname, streaks, or a shared calendar, similar to how most successful
+long-distance-couple apps evolve.
 
 This is explicitly a **future direction, not current scope** — nothing
-here changes the priority of Phases 0–10 above. Location has to fully ship
+here changes the priority of Phases 0–11 above. Location has to fully ship
 first. Revisit once the core proximity loop is live and stable, not before.
 
 ---
