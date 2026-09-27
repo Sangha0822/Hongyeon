@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct HomeView: View {
+    @ObservedObject private var locationManager = LocationManager.shared
     @State private var lastActiveText = "Checking..."
+    @State private var partnerStatus: PartnerLocationStatus? = nil
     @State private var pairingStatus = ""
 
     var body: some View {
@@ -22,9 +25,20 @@ struct HomeView: View {
                     .font(Theme.titleFont)
                     .foregroundColor(Theme.accent)
 
+                Text(distanceText)
+                    .font(Theme.bodyFont)
+                    .foregroundColor(Theme.textPrimary)
+
                 Text(lastActiveText)
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
+
+                Button("Refresh") {
+                    Task {
+                        await refreshPartnerStatus()
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
 
                 Spacer()
 
@@ -47,12 +61,35 @@ struct HomeView: View {
             .padding(.horizontal, 32)
         }
         .task {
-            if let status = await fetchPartnerLocationStatus(), let updatedAt = status.updatedAt {
+            await refreshPartnerStatus()
+        }
+    }
+
+    private func refreshPartnerStatus() async {
+        locationManager.requestLocation()
+
+        if let status = await fetchPartnerLocationStatus() {
+            partnerStatus = status
+            if let updatedAt = status.updatedAt {
                 let formatter = RelativeDateTimeFormatter()
                 lastActiveText = "Partner last active \(formatter.localizedString(for: updatedAt, relativeTo: Date()))"
             } else {
                 lastActiveText = "No location from your partner yet"
             }
+        } else {
+            lastActiveText = "No location from your partner yet"
         }
+    }
+
+    private var distanceText: String {
+        guard let partnerStatus = partnerStatus else { return "" }
+        guard let myLocation = locationManager.lastLocation else { return "Waiting for your location..." }
+
+        let partnerLocation = CLLocation(latitude: partnerStatus.lat, longitude: partnerStatus.lng)
+        let distanceMeters = myLocation.distance(from: partnerLocation)
+        let measurement = Measurement(value: distanceMeters, unit: UnitLength.meters)
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .naturalScale
+        return formatter.string(from: measurement) + " away"
     }
 }
