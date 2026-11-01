@@ -2,7 +2,7 @@
 
 Read this before helping. It sets *how* I want us to work together, not just what we're building.
 
-The full build plan and phase roadmap live in `docs/BUILD_PLAN.md`.
+The full build plan and phase roadmap live in `BUILD_PLAN.md`.
 Read that file when we start a new phase — don't assume it's already in context.
 
 ---
@@ -86,7 +86,7 @@ without a battery-draining live map. Only the *most recent* location is ever sto
 - **Hosting:** Render (free tier now, paid as it grows).
 - **Clients:** SwiftUI for iOS and watchOS, WidgetKit complication, ActivityKit Live Activity.
 
-### Build order (see `docs/BUILD_PLAN.md` for detail)
+### Build order (see `BUILD_PLAN.md` for detail)
 
 Phase 0 de-risks the core loop first (background location → backend → silent push → freshness),
 *before* any UI polish. Then: backend + pairing → iOS location engine → APNs → watch app +

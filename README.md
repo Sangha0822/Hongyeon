@@ -130,8 +130,8 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 - [x] **Phase 2** — iOS location engine (significant-location-change reporting + permissions)
 - [x] **Phase 3** — APNs silent push fan-out
 - [x] **Phase 4** — UI & navigation design (real screens, real navigation)
-- [ ] **Phase 5** — Distance & direction on iPhone (real distance + on-device bearing math)
-- [ ] **Phase 6** — Onboarding questionnaire (display name + relationship anniversary)
+- [x] **Phase 5** — Distance & direction on iPhone (real distance + on-device bearing math)
+- [ ] **Phase 6** — Onboarding flow (name, sign-in, pairing, anniversary, location permission)
 - [ ] **Phase 7** — Tap-to-notify "thinking of you" (first visible push in the project)
 - [ ] **Phase 8** — Shared diary between partners
 - [ ] **Phase 9** — Shared photo wall (photos hanging on a red-thread visual)
