@@ -116,7 +116,12 @@ in with Apple or Google, required pairing with a partner, an optional shared
 anniversary, and the location permission. I mapped out every path, including
 returning users, reinstalls, and declined permissions, before writing any code.
 
-[View the full onboarding flow diagram](docs/images/onboarding-flow.png)
+<details>
+<summary><b>Show the onboarding flow diagram</b></summary>
+
+![Onboarding flow diagram](docs/images/onboarding-flow.png)
+
+</details>
 
 ## Tech stack
 
