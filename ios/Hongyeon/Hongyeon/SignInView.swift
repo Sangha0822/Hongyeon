@@ -21,12 +21,13 @@ struct SignInView: View {
                 Spacer()
 
                 Text("Hongyeon")
-                    .font(.custom("Bradley Hand", size: 44))
+                    .font(.custom("Bradley Hand", fixedSize: 44))
                     .foregroundColor(Theme.accent)
 
                 Text("Stay close, no matter the distance.")
                     .font(Theme.bodyFont)
                     .foregroundColor(Theme.textPrimary)
+                    .multilineTextAlignment(.center)
 
                 Spacer()
 
@@ -39,7 +40,7 @@ struct SignInView: View {
                             isSigningIn = false
                             return
                         }
-
+                        
                         GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
                             if let error = error {
                                 print("Google sign-in failed: \(error.localizedDescription)")
@@ -57,7 +58,7 @@ struct SignInView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .frame(height: 50)
+                    .frame(minHeight: 50)
                     .disabled(isSigningIn)
 
                     SignInWithAppleButton(.signIn) { request in
@@ -87,7 +88,6 @@ struct SignInView: View {
                     .disabled(isSigningIn)
                 }
                 .opacity(isSigningIn ? 0.3 : 1.0)
-                .frame(height: 130)
 
                 Spacer()
             }
@@ -116,4 +116,8 @@ struct SignInView: View {
             }
         }
     }
+}
+#Preview("Large text") {
+    SignInView()
+        .environment(\.dynamicTypeSize, .accessibility3)
 }

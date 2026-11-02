@@ -45,7 +45,7 @@ struct HomeView: View {
                         .foregroundColor(Theme.textPrimary)
 
                     Text(lastActiveText)
-                        .font(.system(size: 13))
+                        .font(Theme.captionFont)
                         .foregroundColor(Theme.textPrimary.opacity(0.6))
                 }
                 .padding(24)
@@ -153,4 +153,9 @@ struct TexturedBackground: View {
             }
         }
     }
+}
+
+#Preview("Large text") {
+    HomeView()
+        .environment(\.dynamicTypeSize, .accessibility3)
 }

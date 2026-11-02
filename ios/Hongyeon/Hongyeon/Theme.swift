@@ -13,8 +13,9 @@ enum Theme {
     static let cardBackground = Color(red: 1.0, green: 0.99, blue: 0.98)
     static let textPrimary = Color(red: 0.18, green: 0.14, blue: 0.13)
 
-    static let titleFont = Font.system(size: 28, weight: .bold, design: .rounded)
-    static let bodyFont = Font.system(size: 16, weight: .regular, design: .rounded)
+    static let titleFont = Font.system(.title, design: .rounded, weight: .bold)
+    static let bodyFont = Font.system(.body, design: .rounded)
+    static let captionFont = Font.system(.footnote, design: .rounded)
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
@@ -23,6 +24,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .font(Theme.bodyFont.weight(.semibold))
             .foregroundColor(.white)
             .padding()
+            .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .background(Theme.accent)
             .cornerRadius(12)
