@@ -108,3 +108,7 @@ struct PairingView: View {
         }
     }
 }
+
+#Preview {
+    PairingView()
+}
