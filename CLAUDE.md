@@ -86,11 +86,10 @@ without a battery-draining live map. Only the *most recent* location is ever sto
 - **Hosting:** Render (free tier now, paid as it grows).
 - **Clients:** SwiftUI for iOS and watchOS, WidgetKit complication, ActivityKit Live Activity.
 
-### Build order (see `BUILD_PLAN.md` for detail)
+### Build order
 
-Phase 0 de-risks the core loop first (background location → backend → silent push → freshness),
-*before* any UI polish. Then: backend + pairing → iOS location engine → APNs → watch app +
-complication + math → Live Activity + live compass. Don't jump ahead to the fun parts.
+The phase order and current status live in `BUILD_PLAN.md` — that file is the
+single source of truth. Don't jump ahead to the fun parts.
 
 ---
 
