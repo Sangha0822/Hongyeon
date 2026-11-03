@@ -265,6 +265,10 @@ Tracked as GitHub issues so they don't get lost:
   domain (~$10–15/year) with DNS records so emails don't land in spam, and
   security limits (max ~5 guesses per code, rate-limited sending, one-time use).
   Open question: same email via Apple and via email — one account or two?
+- **Profile photo** — until then, each person is shown as an initials avatar
+  (first initial in the serif font on a paper circle). A real photo needs image
+  upload and storage, so it belongs with Phase 9 (shared photo wall), which
+  builds that infrastructure: system photo picker + crop, upload, storage.
 
 ---
 
