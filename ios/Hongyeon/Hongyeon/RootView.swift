@@ -19,10 +19,10 @@ struct RootView: View {
             Group {
                 if !appState.isSignedIn {
                     SignInView()
-                } else if locationManager.authorizationStatus == .notDetermined {
-                    LocationOnboardingView()
                 } else if !appState.isPaired {
                     PairingView()
+                } else if locationManager.authorizationStatus == .notDetermined {
+                    LocationOnboardingView()
                 } else {
                     HomeView()
                 }
