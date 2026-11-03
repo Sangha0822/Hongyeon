@@ -46,7 +46,7 @@ struct HomeView: View {
 
                     Text(lastActiveText)
                         .font(Theme.captionFont)
-                        .foregroundColor(Theme.textPrimary.opacity(0.6))
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity)
