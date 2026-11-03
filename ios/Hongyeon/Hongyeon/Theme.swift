@@ -18,9 +18,15 @@ enum Theme {
     static let blush = Color(hex: 0xE09A92)          // decoration only, too light for text
     static let blossom = Color(hex: 0xF5DCD6)        // soft red tint for fills
 
-    static let titleFont = Font.system(.title, design: .rounded, weight: .bold)
-    static let bodyFont = Font.system(.body, design: .rounded)
-    static let captionFont = Font.system(.footnote, design: .rounded)
+    // Brand fonts
+    static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 34)                              // "Hongyeon" logo, never scales
+    static let displayFont = Font.custom("CormorantGaramond-Medium", size: 34, relativeTo: .largeTitle) // screen headlines
+    static let handwrittenFont = Font.custom("Caveat-Regular", size: 22, relativeTo: .title3)          // small handwritten accents
+
+    // UI fonts (system)
+    static let titleFont = Font.system(.title2, weight: .semibold)
+    static let bodyFont = Font.system(.body)
+    static let captionFont = Font.system(.footnote)
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
