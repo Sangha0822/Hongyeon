@@ -119,7 +119,7 @@ returning users, reinstalls, and declined permissions, before writing any code.
 <details>
 <summary><b>Show the onboarding flow diagram</b></summary>
 
-![Onboarding flow diagram](docs/images/onboarding-flow.png)
+![Onboarding flow diagram](docs/images/onboarding-flow.svg)
 
 </details>
 

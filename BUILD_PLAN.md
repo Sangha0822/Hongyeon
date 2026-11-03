@@ -119,7 +119,7 @@ handles both Apple and Google identities.
 
 **Planned additions** (exact columns decided when each phase starts):
 - Phase 6 — a display name per user, and one anniversary date per couple
-  (set by the code creator).
+  (the code creator's date wins; the joiner's is used if the creator skipped).
 - Phase 8 — a diary entries table.
 - Phase 9 — a photos table, plus image storage outside PostgreSQL.
 
@@ -172,25 +172,39 @@ partners by name instead of generically. A near-universal pattern in this app
 category, especially in Korean couple-app culture, which fits Hongyeon's own
 theme directly.
 
-The flow (new user):
-1. **What's your name?** — asked *before* sign-in, held on the phone until
-   sign-in finishes. An "Already have an account? Sign in" link skips ahead.
-2. **Save your story** — Sign in with Apple (requests email only, so the name
-   is never re-asked — see Section 7) or Google.
-3. **Connect with your partner** — "Share my code" (create → share → waiting,
+The flow (new user) — diagram: `docs/images/onboarding-flow.svg`:
+1. **Welcome** — "Get started" for new users, "I already have an account" goes
+   straight to sign-in in its "Welcome back" mode.
+2. **What should we call you?** — one display name, the name your partner sees
+   everywhere. Asked *before* sign-in and held on the phone until sign-in
+   finishes. No separate legal name or partner nickname: one name per person
+   keeps the couple's account consistent.
+3. **When did your story begin?** — optional anniversary, also held as a draft.
+   Asked early so onboarding opens with personal questions instead of jumping
+   straight to an account wall.
+4. **Save your story** — Sign in with Apple (requests email only, so the name
+   is never re-asked — see Section 7) or Google. The draft name and date are
+   saved to the account.
+5. **Connect with your partner** — "Share my code" (create → share → waiting,
    updates automatically when the partner joins) or "I have a code" (enter →
    join). Pairing is required: there is no unpaired home screen.
-4. **You're connected!**
-5. **When did your story begin?** — optional, set once per couple. Only the
-   code creator is asked; the joiner skips it. If skipped, it can be set later.
-6. **Enable location sharing** — explain privacy, then one "Continue" button
-   that opens the system prompt ("While Using" first, "Always" later).
-7. **Welcome home.**
+6. **You're connected!** — shows both partners' names. The couple's anniversary
+   is settled here: the code creator's date wins; if they skipped it, the
+   joiner's date is used.
+7. **Enable location sharing** — explain privacy, then one button that always
+   opens the system prompt ("While Using" first, "Always" later). No "Not now"
+   on our own screen; a denial is handled calmly and Home shows a location-off
+   state with an Open Settings button.
+8. **Welcome home** — a one-time welcome on first setup, then Home.
 
 Returning users sign in and skip setup, but are routed back into the steps
-they're missing: not paired → step 3; no name (used the sign-in link as a new
-user) → step 1; location permission not granted (e.g. after a reinstall) →
-step 6. Unpairing (either partner) also returns to step 3.
+they're missing: not paired → step 5; no name (an account without one) → the
+name screen with "missing name" wording; location permission never asked
+(e.g. after a reinstall) → step 7. Unpairing (either partner) also returns to
+step 5.
+
+Design source: a Figma Make prototype, used as a visual reference only — the
+app trims its copy and the flow above wins where they differ.
 
 ### Phase 7 — Tap-to-notify "thinking of you"
 A tap on the home screen sends the partner a real, visible push
@@ -251,6 +265,10 @@ Tracked as GitHub issues so they don't get lost:
   domain (~$10–15/year) with DNS records so emails don't land in spam, and
   security limits (max ~5 guesses per code, rate-limited sending, one-time use).
   Open question: same email via Apple and via email — one account or two?
+- **Profile photo** — until then, each person is shown as an initials avatar
+  (first initial in the serif font on a paper circle). A real photo needs image
+  upload and storage, so it belongs with Phase 9 (shared photo wall), which
+  builds that infrastructure: system photo picker + crop, upload, storage.
 
 ---
 

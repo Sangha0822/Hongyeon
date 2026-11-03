@@ -117,7 +117,3 @@ struct SignInView: View {
         }
     }
 }
-#Preview("Large text") {
-    SignInView()
-        .environment(\.dynamicTypeSize, .accessibility3)
-}

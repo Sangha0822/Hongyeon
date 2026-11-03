@@ -8,14 +8,25 @@
 import SwiftUI
 
 enum Theme {
-    static let accent = Color(red: 0.91, green: 0.33, blue: 0.35)
-    static let background = Color(red: 1.0, green: 0.97, blue: 0.96)
-    static let cardBackground = Color(red: 1.0, green: 0.99, blue: 0.98)
-    static let textPrimary = Color(red: 0.18, green: 0.14, blue: 0.13)
+    // "Hongsil" palette: the red thread is the only saturated color in the app.
+    static let accent = Color(hex: 0xC0362C)         // "thread" red: buttons, highlights
+    static let background = Color(hex: 0xF7F3EA)     // "paper": screen background
+    static let cardBackground = Color(hex: 0xFFFDF8) // "surface": cards, inputs
+    static let textPrimary = Color(hex: 0x2E2624)    // "ink": main text
+    static let textSecondary = Color(hex: 0x6B605A)  // "muted": hints, captions
+    static let line = Color(hex: 0xE4DCCF)           // borders, dividers
+    static let blush = Color(hex: 0xE09A92)          // decoration only, too light for text
+    static let blossom = Color(hex: 0xF5DCD6)        // soft red tint for fills
 
-    static let titleFont = Font.system(.title, design: .rounded, weight: .bold)
-    static let bodyFont = Font.system(.body, design: .rounded)
-    static let captionFont = Font.system(.footnote, design: .rounded)
+    // Brand fonts
+    static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 34)                              // "Hongyeon" logo, never scales
+    static let displayFont = Font.custom("CormorantGaramond-Medium", size: 34, relativeTo: .largeTitle) // screen headlines
+    static let handwrittenFont = Font.custom("Caveat-Regular", size: 22, relativeTo: .title3)          // small handwritten accents
+
+    // UI fonts (system)
+    static let titleFont = Font.system(.title2, weight: .semibold)
+    static let bodyFont = Font.system(.body)
+    static let captionFont = Font.system(.footnote)
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
@@ -29,5 +40,15 @@ struct PrimaryButtonStyle: ButtonStyle {
             .background(Theme.accent)
             .cornerRadius(12)
             .opacity(configuration.isPressed ? 0.8 : 1.0)
+    }
+}
+
+extension Color {
+    init(hex: UInt32) {
+        self.init(
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255
+        )
     }
 }
