@@ -13,6 +13,14 @@
 	</array>
 	<key>GIDClientID</key>
 	<string>287981043819-0fb11ma0d2aqbb8dee2cha8c1j2jsji7.apps.googleusercontent.com</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Caveat-Regular.ttf</string>
+		<string>CormorantGaramond-Regular.ttf</string>
+		<string>CormorantGaramond-Medium.ttf</string>
+		<string>CormorantGaramond-SemiBold.ttf</string>
+		<string>CormorantGaramond-Italic.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
