@@ -20,7 +20,9 @@ enum Theme {
 
     // Brand fonts
     static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 34)                              // "Hongyeon" logo, never scales
+    static let heroWordmarkFont = Font.custom("Caveat-Regular", fixedSize: 72)                          // large logo on the Welcome screen
     static let displayFont = Font.custom("CormorantGaramond-Medium", size: 34, relativeTo: .largeTitle) // screen headlines
+    static let taglineFont = Font.custom("CormorantGaramond-Medium", size: 24, relativeTo: .title2)     // short serif lines under a title
     static let handwrittenFont = Font.custom("Caveat-Regular", size: 22, relativeTo: .title3)          // small handwritten accents
 
     // UI fonts (system)

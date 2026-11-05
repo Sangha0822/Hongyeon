@@ -21,7 +21,10 @@ struct RootView: View {
                 case .checking, .unreachable:
                     LaunchView(isUnreachable: appState.status == .unreachable)
                 case .signedOut:
-                    SignInView()
+                    NavigationStack {
+                        WelcomeView()
+                    }
+                    .tint(Theme.accent)
                 case .unpaired:
                     PairingView()
                 case .paired:
