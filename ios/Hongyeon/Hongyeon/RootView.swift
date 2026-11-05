@@ -17,14 +17,22 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Group {
-                if !appState.isSignedIn {
-                    SignInView()
-                } else if locationManager.authorizationStatus == .notDetermined {
-                    LocationOnboardingView()
-                } else if !appState.isPaired {
+                switch appState.status {
+                case .checking, .unreachable:
+                    LaunchView(isUnreachable: appState.status == .unreachable)
+                case .signedOut:
+                    NavigationStack {
+                        WelcomeView()
+                    }
+                    .tint(Theme.accent)
+                case .unpaired:
                     PairingView()
-                } else {
-                    HomeView()
+                case .paired:
+                    if locationManager.authorizationStatus == .notDetermined {
+                        LocationOnboardingView()
+                    } else {
+                        HomeView()
+                    }
                 }
             }
 
