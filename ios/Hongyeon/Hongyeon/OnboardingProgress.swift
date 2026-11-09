@@ -16,7 +16,7 @@ struct OnboardingProgress: View {
             HStack(spacing: 6) {
                 ForEach(1...stages.count, id: \.self) { index in
                     Capsule()
-                        .fill(index <= step ? Theme.accent : Theme.line)
+                        .fill(index < step ? Theme.blush : index == step ? Theme.accent : Theme.line) // done, current, upcoming
                         .frame(width: 36, height: 3)
                 }
             }
