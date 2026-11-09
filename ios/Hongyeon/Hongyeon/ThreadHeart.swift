@@ -51,6 +51,14 @@ struct ThreadHeartArt: View {
                     beat = true
                 }
             }
+            // A covered screen stays alive in the navigation stack, and a hidden repeatForever
+            // animation still runs every frame, making typing on the next screen stutter.
+            // A new one-off animation replaces the repeating one; onAppear restarts it on return.
+            .onDisappear {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    beat = false
+                }
+            }
     }
 }
 

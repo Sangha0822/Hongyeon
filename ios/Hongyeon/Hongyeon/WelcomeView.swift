@@ -35,7 +35,7 @@ struct WelcomeView: View {
 
                 VStack(spacing: 8) {
                     NavigationLink {
-                        SignInView() // the Name screen goes here in Phase 6.2
+                        NameView()
                     } label: {
                         Text("Get started")
                     }

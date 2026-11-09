@@ -24,7 +24,7 @@ struct RootView: View {
                     NavigationStack {
                         WelcomeView()
                     }
-                    .tint(Theme.accent)
+                    .tint(Theme.textPrimary) // ink back chevrons; red stays for actions
                 case .unpaired:
                     PairingView()
                 case .paired:
