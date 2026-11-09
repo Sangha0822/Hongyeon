@@ -32,6 +32,8 @@ enum Theme {
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled // false inside .disabled(true)
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.bodyFont.weight(.semibold))
@@ -41,7 +43,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .background(Theme.accent)
             .cornerRadius(12)
-            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1.0) : 0.4)
     }
 }
 
