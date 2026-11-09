@@ -28,6 +28,22 @@ struct CornerThread: Shape {
     }
 }
 
+// The faint thread trailing off an onboarding screen's bottom-right corner, behind everything.
+// It ignores the keyboard, so it stays put (hidden) instead of riding up while typing.
+struct CornerThreadDecoration: View {
+    var body: some View {
+        CornerThread()
+            .stroke(Theme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            .aspectRatio(393 / 90, contentMode: .fit)
+            .frame(width: 200)
+            .opacity(0.33)
+            .offset(x: 80)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
+    }
+}
+
 #Preview {
     CornerThread()
         .stroke(Theme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))

@@ -42,7 +42,7 @@ struct WelcomeView: View {
                     .buttonStyle(PrimaryButtonStyle())
 
                     NavigationLink {
-                        SignInView()
+                        SignInView(isReturning: true)
                     } label: {
                         Text("I already have an account")
                             .font(Theme.bodyFont)

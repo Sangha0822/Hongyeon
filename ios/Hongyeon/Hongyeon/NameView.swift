@@ -22,17 +22,7 @@ struct NameView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
-            // Faint thread trailing off the bottom-right corner. It ignores the keyboard,
-            // so it stays put (hidden) instead of riding up while typing.
-            CornerThread()
-                .stroke(Theme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-                .aspectRatio(393 / 90, contentMode: .fit)
-                .frame(width: 200)
-                .opacity(0.33)
-                .offset(x: 80)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .ignoresSafeArea()
-                .accessibilityHidden(true)
+            CornerThreadDecoration()
 
             ScrollView {
                 VStack(spacing: 12) {
@@ -77,15 +67,7 @@ struct NameView: View {
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 2) {
-                    Text("Hongyeon")
-                        .font(Theme.wordmarkFont)
-                        .foregroundColor(Theme.textPrimary)
-                    ThreadHeart()
-                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                        .frame(width: 36, height: 19)
-                        .accessibilityHidden(true)
-                }
+                NavWordmark()
             }
         }
         // The keyboard counts as part of the safe area, so this button rides up above it.
@@ -107,7 +89,7 @@ struct NameView: View {
             isNameFocused = true
         }
         .navigationDestination(isPresented: $goToSignIn) {
-            SignInView()
+            SignInView(isReturning: false)
         }
     }
 
