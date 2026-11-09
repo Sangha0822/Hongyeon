@@ -9,14 +9,14 @@ import SwiftUI
 
 enum Theme {
     // "Hongsil" palette: the red thread is the only saturated color in the app.
-    static let accent = Color(hex: 0xC0362C)         // "thread" red: buttons, highlights
-    static let background = Color(hex: 0xF7F3EA)     // "paper": screen background
-    static let cardBackground = Color(hex: 0xFFFDF8) // "surface": cards, inputs
+    static let accent = Color(hex: 0xB74650)         // "thread" dusty rose: buttons, highlights
+    static let background = Color(hex: 0xF8F3EC)     // "paper": screen background
+    static let cardBackground = Color(hex: 0xFFFCF7) // "surface": cards, inputs
     static let textPrimary = Color(hex: 0x2E2624)    // "ink": main text
     static let textSecondary = Color(hex: 0x6B605A)  // "muted": hints, captions
-    static let line = Color(hex: 0xE4DCCF)           // borders, dividers
-    static let blush = Color(hex: 0xE09A92)          // decoration only, too light for text
-    static let blossom = Color(hex: 0xF5DCD6)        // soft red tint for fills
+    static let line = Color(hex: 0xE7DCD1)           // borders, dividers
+    static let blush = Color(hex: 0xD98C8D)          // decoration only, too light for text
+    static let blossom = Color(hex: 0xF6D6D5)        // soft rose tint for fills
 
     // Brand fonts
     static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 34)                              // "Hongyeon" logo, never scales
