@@ -54,6 +54,9 @@ struct WelcomeView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
         }
+        // Welcome has no text field. Without this, swiping back from the Name screen while
+        // its keyboard is still up squeezes Welcome above the keyboard, then slides it down.
+        .ignoresSafeArea(.keyboard)
         .toolbar(.hidden, for: .navigationBar)
     }
 }
