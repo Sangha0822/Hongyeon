@@ -7,7 +7,8 @@
 
 import Foundation
 
-func signIn(endpoint: String, identityToken: String) async {
+// Returns whether the app ended up signed in, so the screen can show a message when it didn't.
+func signIn(endpoint: String, identityToken: String) async -> Bool {
     let url = URL(string: "https://hongyeon-api.onrender.com/\(endpoint)")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -21,8 +22,10 @@ func signIn(endpoint: String, identityToken: String) async {
             SessionStore.save(token)
             registerDeviceTokenIfReady()
             await AppState.shared.refresh()
+            return AppState.shared.status != .signedOut
         }
     } catch {
         print("Sign-in request failed: \(error.localizedDescription)")
     }
+    return false
 }

@@ -32,7 +32,7 @@ struct NameView: View {
                     NameTagArt(name: trimmedName)
 
                     VStack(spacing: 12) {
-                        Text("What should we call you?")
+                        Text("What should we\ncall you?")
                             .font(Theme.displayFont)
                             .foregroundColor(Theme.textPrimary)
 

@@ -17,6 +17,7 @@ struct SignInView: View {
 
     @State private var isSigningIn = false
     @State private var loadingMessage = "Signing you in..."
+    @State private var showsError = false
 
     var body: some View {
         ZStack {
@@ -35,7 +36,7 @@ struct SignInView: View {
                             .frame(width: 170)
                             .padding(.vertical, 8)
 
-                        Text(isReturning ? "Welcome back to your story." : "Let’s keep your story safe.")
+                        Text(isReturning ? "Welcome back\nto your story." : "Let’s keep your\nstory safe.")
                             .font(Theme.displayFont)
                             .foregroundColor(Theme.textPrimary)
 
@@ -63,6 +64,12 @@ struct SignInView: View {
                         }
                         .animation(.easeInOut(duration: 0.2), value: isSigningIn)
                         .padding(.top, 20)
+
+                        if showsError && !isSigningIn {
+                            Text("Couldn’t sign you in. Please try again.")
+                                .font(Theme.captionFont)
+                                .foregroundColor(Theme.accent)
+                        }
                     }
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -104,6 +111,7 @@ struct SignInView: View {
     private var appleButton: some View {
         SignInWithAppleButton(.signIn) { request in
             request.requestedScopes = [.email]
+            showsError = false
             isSigningIn = true
         } onCompletion: { result in
             switch result {
@@ -112,14 +120,17 @@ struct SignInView: View {
                    let identityTokenData = credential.identityToken,
                    let identityTokenString = String(data: identityTokenData, encoding: .utf8) {
                     Task {
-                        await signIn(endpoint: "auth/apple", identityToken: identityTokenString)
+                        showsError = !(await signIn(endpoint: "auth/apple", identityToken: identityTokenString))
                         isSigningIn = false
                     }
                 } else {
+                    showsError = true
                     isSigningIn = false
                 }
             case .failure(let error):
                 print("Sign in with Apple failed: \(error.localizedDescription)")
+                // Closing Apple's sheet on purpose isn't an error worth a message.
+                showsError = (error as? ASAuthorizationError)?.code != .canceled
                 isSigningIn = false
             }
         }
@@ -159,6 +170,7 @@ struct SignInView: View {
     }
 
     private func signInWithGoogle() {
+        showsError = false
         isSigningIn = true
         guard let rootViewController = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
@@ -170,15 +182,17 @@ struct SignInView: View {
         GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
             if let error = error {
                 print("Google sign-in failed: \(error.localizedDescription)")
+                showsError = (error as? GIDSignInError)?.code != .canceled
                 isSigningIn = false
                 return
             }
             guard let idToken = result?.user.idToken?.tokenString else {
+                showsError = true
                 isSigningIn = false
                 return
             }
             Task { @MainActor in
-                await signIn(endpoint: "auth/google", identityToken: idToken)
+                showsError = !(await signIn(endpoint: "auth/google", identityToken: idToken))
                 isSigningIn = false
             }
         }
