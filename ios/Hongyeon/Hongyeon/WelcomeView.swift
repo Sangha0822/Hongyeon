@@ -14,24 +14,30 @@ struct WelcomeView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                VStack(spacing: 6) {
-                    Text("Hongyeon")
-                        .font(Theme.heroWordmarkFont)
-                        .foregroundColor(Theme.textPrimary)
+                Text("Hongyeon")
+                    .font(Theme.heroWordmarkFont)
+                    .foregroundColor(Theme.textPrimary)
 
-                    ThreadHeartArt()
-                        .frame(width: 180)
-                        .padding(.vertical, 16)
+                ThreadHeartArt()
+                    .frame(width: 180)
+                    .padding(.vertical, 16)
 
-                    Text("However far, the thread holds.")
-                        .font(Theme.taglineFont)
-                        .foregroundColor(Theme.textPrimary)
-                        .multilineTextAlignment(.center)
-                }
+                Text("However far, the thread holds.")
+                    .font(Theme.taglineFont)
+                    .foregroundColor(Theme.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
 
-                // Keeps the buttons close to the content instead of pinned far below it.
-                Spacer(minLength: 40)
-                    .frame(maxHeight: 120)
+                // Where the name comes from.
+                Text("홍연 · 紅緣 · the red thread of fate")
+                    .font(Theme.captionFont)
+                    .foregroundColor(Theme.textSecondary)
+                    .padding(.top, 10)
+
+                // Two spacers below and one above: the content sits a third of the way down,
+                // not in the dead center.
+                Spacer()
+                Spacer()
 
                 VStack(spacing: 8) {
                     NavigationLink {
@@ -50,8 +56,8 @@ struct WelcomeView: View {
                             .frame(minHeight: 44)
                     }
                 }
+                .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
             .padding(.bottom, 40)
         }
         // Welcome has no text field. Without this, swiping back from the Name screen while

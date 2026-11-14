@@ -23,22 +23,24 @@ struct LaunchView: View {
                     .font(Theme.heroWordmarkFont)
                     .foregroundColor(Theme.textPrimary)
 
-                // The space Welcome's thread heart and tagline take.
-                ZStack {
+                // The space Welcome's thread heart (128), tagline and name line (57) take.
+                Color.clear
+                    .frame(height: 185)
+                .overlay {
                     if isUnreachable && !isRetrying {
                         Text("We couldn't reach Hongyeon. Check your connection and try again.")
                             .font(Theme.bodyFont)
                             .foregroundColor(Theme.textSecondary)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     } else {
                         ProgressView()
                             .tint(Theme.accent)
                     }
                 }
-                .frame(height: 169)
 
-                Spacer(minLength: 40)
-                    .frame(maxHeight: 120)
+                Spacer()
+                Spacer()
 
                 // The space Welcome's two buttons take; Try again sits where Get started will.
                 ZStack {
@@ -54,8 +56,8 @@ struct LaunchView: View {
                     }
                 }
                 .frame(height: 106, alignment: .top)
+                .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
             .padding(.bottom, 40)
         }
     }
