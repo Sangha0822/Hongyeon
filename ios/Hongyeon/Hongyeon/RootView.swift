@@ -35,6 +35,8 @@ struct RootView: View {
                     }
                 }
             }
+            // Screens fade into each other instead of cutting when the account status changes.
+            .animation(.easeInOut(duration: 0.3), value: appState.status)
 
             VStack {
                 HStack {

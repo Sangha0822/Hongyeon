@@ -45,8 +45,8 @@ struct WelcomeView: View {
                         SignInView(isReturning: true)
                     } label: {
                         Text("I already have an account")
-                            .font(Theme.bodyFont)
-                            .foregroundColor(Theme.textSecondary)
+                            .font(Theme.bodyFont.weight(.medium))
+                            .foregroundColor(Theme.textPrimary)
                             .frame(minHeight: 44)
                     }
                 }
