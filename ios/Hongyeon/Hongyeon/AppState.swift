@@ -11,6 +11,7 @@ import Combine
 enum AccountStatus {
     case checking     // launch: waiting for the server's answer
     case signedOut    // no token, or the server rejected it (401)
+    case needsName    // signed in, but the account has no name yet
     case unpaired
     case paired
     case unreachable  // couldn't reach the server, and there's no earlier answer
@@ -44,7 +45,20 @@ class AppState: ObservableObject {
             } else if statusCode == 200 {
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 let paired = json?["paired"] as? Bool ?? false
-                status = paired ? .paired : .unpaired
+                let hasName = json?["display_name"] is String
+                let draftName = UserDefaults.standard.string(forKey: draftNameKey) ?? ""
+
+                if hasName {
+                    // Never overwrite a name the account already has; the draft is just dropped.
+                    UserDefaults.standard.removeObject(forKey: draftNameKey)
+                    status = paired ? .paired : .unpaired
+                } else if !draftName.isEmpty, await saveName(draftName) {
+                    // A new user: the name typed before sign-in is now on the account.
+                    UserDefaults.standard.removeObject(forKey: draftNameKey)
+                    status = paired ? .paired : .unpaired
+                } else {
+                    status = .needsName
+                }
             } else {
                 keepStatusOrMarkUnreachable()
             }

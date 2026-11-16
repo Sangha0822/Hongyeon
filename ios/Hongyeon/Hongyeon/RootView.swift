@@ -25,6 +25,10 @@ struct RootView: View {
                         WelcomeView()
                     }
                     .tint(Theme.textPrimary) // ink back chevrons; red stays for actions
+                case .needsName:
+                    NavigationStack {
+                        NameView(isMissingName: true)
+                    }
                 case .unpaired:
                     PairingView()
                 case .paired:
