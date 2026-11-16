@@ -5,13 +5,18 @@
 
 import SwiftUI
 
-// Asks a new user's name before sign-in.
+// Asks for the user's name. New users see it before sign-in; a signed-in account
+// that still has no name sees it again (isMissingName) before pairing.
 struct NameView: View {
+    var isMissingName = false
+
     // Saved on the phone, not in the view: signing in replaces this whole screen stack,
-    // and the name has to survive until it's saved to the account (Phase 6.4).
-    @AppStorage("draftName") private var draftName = ""
+    // and the name has to survive until AppState saves it to the account.
+    @AppStorage(draftNameKey) private var draftName = ""
     @State private var name = "" // what's being typed; saved to draftName on Continue
     @State private var goToSignIn = false
+    @State private var isSaving = false
+    @State private var showsError = false
     @FocusState private var isNameFocused: Bool
 
     private var trimmedName: String {
@@ -26,7 +31,9 @@ struct NameView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    OnboardingProgress(step: 1)
+                    if !isMissingName {
+                        OnboardingProgress(step: 1)
+                    }
 
                     // Full screen width, so the thread runs off both edges.
                     NameTagArt(name: trimmedName)
@@ -36,7 +43,7 @@ struct NameView: View {
                             .font(Theme.displayFont)
                             .foregroundColor(Theme.textPrimary)
 
-                        Text("Just the name your person calls you.")
+                        Text(isMissingName ? "Your account doesn’t have a name yet." : "Just the name your person calls you.")
                             .font(Theme.bodyFont)
                             .foregroundColor(Theme.textSecondary)
 
@@ -57,6 +64,18 @@ struct NameView: View {
                                     .stroke(Theme.line, lineWidth: 1)
                             )
                             .padding(.top, 20)
+                            // The server accepts at most 20 characters.
+                            .onChange(of: name) { _, newValue in
+                                if newValue.count > 20 {
+                                    name = String(newValue.prefix(20))
+                                }
+                            }
+
+                        if showsError {
+                            Text("Couldn’t save your name. Please try again.")
+                                .font(Theme.captionFont)
+                                .foregroundColor(Theme.accent)
+                        }
                     }
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -74,7 +93,7 @@ struct NameView: View {
         .safeAreaInset(edge: .bottom) {
             Button("Continue", action: continueToSignIn)
                 .buttonStyle(PrimaryButtonStyle())
-                .disabled(trimmedName.isEmpty)
+                .disabled(trimmedName.isEmpty || isSaving)
                 .padding(.horizontal, 32)
                 .padding(.bottom, 16)
         }
@@ -95,9 +114,25 @@ struct NameView: View {
 
     // Shared by the Continue button and the keyboard's return key.
     private func continueToSignIn() {
-        guard !trimmedName.isEmpty else { return }
-        draftName = trimmedName
-        goToSignIn = true
+        guard !trimmedName.isEmpty, !isSaving else { return }
+
+        guard isMissingName else {
+            draftName = trimmedName
+            goToSignIn = true
+            return
+        }
+
+        // Already signed in: save straight to the account, then let AppState move on.
+        isSaving = true
+        showsError = false
+        Task {
+            if await saveName(trimmedName) {
+                await AppState.shared.refresh()
+            } else {
+                showsError = true
+            }
+            isSaving = false
+        }
     }
 }
 
