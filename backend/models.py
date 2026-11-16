@@ -25,6 +25,7 @@ class User(Base):
     email: Mapped[str | None] = mapped_column(String, nullable = True)
     partner_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("users.id"), nullable = True)
     apns_token: Mapped[str | None] = mapped_column(String, nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 class PairingCode(Base):
     __tablename__ = "pairing_codes"
