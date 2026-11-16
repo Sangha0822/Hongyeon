@@ -14,7 +14,7 @@ from dependencies import get_current_user
 router = APIRouter()
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-CODE_LIFETIME = timedelta(minutes=10)
+CODE_LIFETIME = timedelta(hours=24)
 
 @router.post("/pairing/create")
 async def create_pairing_code(current_user: User = Depends(get_current_user)):
@@ -68,7 +68,9 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
     if current_user.partner_id is not None:
         raise HTTPException(status_code=400, detail="You are already paired")
 
-    code = request.code.upper()
+    # The app shows codes as "HY-XXXXXX". Accept that form, the bare six characters,
+    # lowercase, and stray spaces, so however the code was typed or pasted it still matches.
+    code = request.code.strip().upper().removeprefix("HY-")
     async with async_session() as session:
         pairing_code = await session.get(PairingCode, code)
         if pairing_code is None or pairing_code.expires_at < datetime.now(timezone.utc):
