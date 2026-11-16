@@ -17,7 +17,7 @@ struct OnboardingProgress: View {
                 ForEach(1...stages.count, id: \.self) { index in
                     Capsule()
                         .fill(index < step ? Theme.blush : index == step ? Theme.accent : Theme.line) // done, current, upcoming
-                        .frame(width: 36, height: 3)
+                        .frame(width: 46, height: 4)
                 }
             }
 

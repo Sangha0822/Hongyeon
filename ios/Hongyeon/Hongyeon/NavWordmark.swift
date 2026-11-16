@@ -14,7 +14,7 @@ struct NavWordmark: View {
                 .foregroundColor(Theme.textPrimary)
             ThreadHeart()
                 .stroke(Theme.accent, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                .frame(width: 36, height: 19)
+                .frame(width: 42, height: 22)
                 .accessibilityHidden(true)
         }
     }

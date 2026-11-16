@@ -30,7 +30,10 @@ struct RootView: View {
                         NameView(isMissingName: true)
                     }
                 case .unpaired:
-                    PairingView()
+                    NavigationStack {
+                        PartnerChoiceView()
+                    }
+                    .tint(Theme.textPrimary)
                 case .paired:
                     if locationManager.authorizationStatus == .notDetermined {
                         LocationOnboardingView()
