@@ -89,6 +89,9 @@ struct NameView: View {
                 NavWordmark()
             }
         }
+        // The first screen in a stack gets room for a large title by default;
+        // inline keeps the content right under the wordmark.
+        .navigationBarTitleDisplayMode(.inline)
         // The keyboard counts as part of the safe area, so this button rides up above it.
         .safeAreaInset(edge: .bottom) {
             Button("Continue", action: continueToSignIn)

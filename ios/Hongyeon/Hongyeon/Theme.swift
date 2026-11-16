@@ -19,7 +19,7 @@ enum Theme {
     static let blossom = Color(hex: 0xF6D6D5)        // soft rose tint for fills
 
     // Brand fonts
-    static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 34)                              // "Hongyeon" logo, never scales
+    static let wordmarkFont = Font.custom("Caveat-Regular", fixedSize: 40)                              // "Hongyeon" logo, never scales
     static let heroWordmarkFont = Font.custom("Caveat-Regular", fixedSize: 72)                          // large logo on the Welcome screen
     static let displayFont = Font.custom("CormorantGaramond-Medium", size: 34, relativeTo: .largeTitle) // screen headlines
     static let taglineFont = Font.custom("CormorantGaramond-Medium", size: 24, relativeTo: .title2)     // short serif lines under a title
@@ -44,6 +44,24 @@ struct PrimaryButtonStyle: ButtonStyle {
             .background(Theme.accent)
             .cornerRadius(12)
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1.0) : 0.4)
+    }
+}
+
+// The quieter of two choices: a light fill with a thin border and ink text.
+struct SecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Theme.bodyFont.weight(.semibold))
+            .foregroundColor(Theme.textPrimary)
+            .padding()
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Theme.line, lineWidth: 1)
+            )
+            .opacity(configuration.isPressed ? 0.6 : 1.0)
     }
 }
 
