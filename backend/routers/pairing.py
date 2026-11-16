@@ -1,7 +1,9 @@
-import random
+import secrets
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import delete, or_, select
+from sqlalchemy.exc import IntegrityError
 from aioapns import NotificationRequest, PushType
 from database import async_session
 from models import User, PairingCode
@@ -12,19 +14,51 @@ from dependencies import get_current_user
 router = APIRouter()
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+CODE_LIFETIME = timedelta(minutes=10)
 
 @router.post("/pairing/create")
 async def create_pairing_code(current_user: User = Depends(get_current_user)):
-    code = ''.join(random.choices(CODE_ALPHABET, k=6))
+    # A code is the table's primary key, so two live codes can never be equal. If the
+    # random pick collides with an existing one, the insert fails and we pick again.
+    for _ in range(5):
+        code = ''.join(secrets.choice(CODE_ALPHABET) for _ in range(6))
+        now = datetime.now(timezone.utc)
+        expires_at = now + CODE_LIFETIME
+
+        async with async_session() as session:
+            # One live code per user: making a new code removes this user's earlier ones.
+            # Expired codes from anyone are cleared at the same time.
+            await session.execute(
+                delete(PairingCode).where(
+                    or_(PairingCode.creator_id == current_user.id, PairingCode.expires_at < now)
+                )
+            )
+            session.add(PairingCode(code=code, creator_id=current_user.id, expires_at=expires_at))
+            try:
+                await session.commit()
+            except IntegrityError:
+                continue
+
+        return {"code": code, "expires_at": expires_at.isoformat()}
+
+    raise HTTPException(status_code=503, detail="Could not create a pairing code, please try again")
+
+@router.get("/pairing/code")
+async def read_pairing_code(current_user: User = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
     async with async_session() as session:
-        pairing_code = PairingCode(
-            code=code,
-            creator_id=current_user.id,
-            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10)
+        result = await session.execute(
+            select(PairingCode).where(
+                PairingCode.creator_id == current_user.id,
+                PairingCode.expires_at > now,
+            )
         )
-        session.add(pairing_code)
-        await session.commit()
-    return {"code": code}
+        pairing_code = result.scalars().first()
+
+    # Having no live code is a normal state, not an error, so it is a 200 with empty values.
+    if pairing_code is None:
+        return {"code": None, "expires_at": None}
+    return {"code": pairing_code.code, "expires_at": pairing_code.expires_at.isoformat()}
 
 class JoinPairingRequest(BaseModel):
     code: str

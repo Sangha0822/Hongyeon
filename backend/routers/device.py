@@ -25,3 +25,18 @@ async def register_device_token(request: DeviceTokenRequest, current_user: User 
         await session.commit()
 
     return {"status": "registered"}
+
+@router.delete("/device-token/{token}")
+async def remove_device_token(token: str, current_user: User = Depends(get_current_user)):
+    async with async_session() as session:
+        user = await session.get(User, current_user.id)
+
+        # Only clear it if this account's stored token is the one for the device signing out.
+        # If the account has since registered a different device, that one keeps its pushes.
+        if user.apns_token != token:
+            return {"status": "unchanged"}
+
+        user.apns_token = None
+        await session.commit()
+
+    return {"status": "removed"}
