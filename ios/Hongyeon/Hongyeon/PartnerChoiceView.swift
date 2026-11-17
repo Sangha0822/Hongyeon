@@ -7,6 +7,9 @@ import SwiftUI
 
 // The first screen for a signed-in user who isn't paired: invite a partner, or enter their code.
 struct PartnerChoiceView: View {
+    @State private var goToInvite = false
+    @State private var checkedForCode = false
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -31,11 +34,10 @@ struct PartnerChoiceView: View {
                                 .font(Theme.bodyFont)
                                 .foregroundColor(Theme.textSecondary)
 
-                            // Both choices open the current pairing screen for now;
-                            // each gets its own screen in Phase 6.6 and 6.7.
+                            // "I Have a Code" still opens the old pairing screen until Phase 6.7.
                             VStack(spacing: 12) {
                                 NavigationLink {
-                                    PairingView()
+                                    InviteView()
                                 } label: {
                                     // Text centered across the button, with a symbol at each edge.
                                     ZStack {
@@ -89,8 +91,10 @@ struct PartnerChoiceView: View {
                 // Pairing is required and nothing sits behind this screen, so this is the
                 // only way out for someone who signed in with the wrong account.
                 Button("Sign out") {
-                    SessionStore.clear()
                     Task {
+                        // While the session still exists, so the server knows whose token it is.
+                        await unregisterDeviceToken()
+                        SessionStore.clear()
                         await AppState.shared.refresh()
                     }
                 }
@@ -109,6 +113,17 @@ struct PartnerChoiceView: View {
         // The first screen in a stack gets room for a large title by default;
         // inline keeps the content right under the wordmark.
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $goToInvite) {
+            InviteView()
+        }
+        // Reopening the app with a code still waiting goes straight back to the invite screen.
+        .task {
+            guard !checkedForCode else { return }
+            checkedForCode = true
+            if (try? await fetchPairingCode()) != nil {
+                goToInvite = true
+            }
+        }
     }
 }
 

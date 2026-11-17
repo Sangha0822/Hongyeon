@@ -63,8 +63,8 @@ struct PairingView: View {
 
                     Button("Create Pairing Code") {
                         Task {
-                            if let code = await createPairingCode() {
-                                pairingCode = code
+                            if let info = await createPairingCode() {
+                                pairingCode = info.code
                             }
                         }
                     }
