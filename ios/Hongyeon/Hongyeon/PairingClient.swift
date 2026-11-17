@@ -7,7 +7,29 @@
 
 import Foundation
 
-func createPairingCode() async -> String? {
+// A pairing code as the server describes it. The app shows it as "HY-" + code.
+struct PairingCodeInfo {
+    let code: String
+    let expiresAt: Date
+
+    var displayCode: String { "HY-\(code)" }
+}
+
+// Reads {"code": ..., "expires_at": ...} from the server; nil when either is missing or null.
+private func pairingCodeInfo(from data: Data) -> PairingCodeInfo? {
+    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let code = json["code"] as? String,
+          let expiresText = json["expires_at"] as? String else { return nil }
+
+    // The server sends microseconds ("...:54.142213+00:00"), which the ISO 8601 parser
+    // doesn't accept, so the fraction is dropped before parsing.
+    let withoutFraction = expiresText.replacingOccurrences(of: "\\.\\d+", with: "", options: .regularExpression)
+    guard let expiresAt = ISO8601DateFormatter().date(from: withoutFraction) else { return nil }
+    return PairingCodeInfo(code: code, expiresAt: expiresAt)
+}
+
+// Makes a new code, replacing any earlier one.
+func createPairingCode() async -> PairingCodeInfo? {
     guard let token = SessionStore.load() else { return nil }
     let url = URL(string: "https://hongyeon-api.onrender.com/pairing/create")!
     var request = URLRequest(url: url)
@@ -16,12 +38,26 @@ func createPairingCode() async -> String? {
 
     do {
         let (data, _) = try await URLSession.shared.data(for: request)
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return json?["code"] as? String
+        return pairingCodeInfo(from: data)
     } catch {
         print("Create pairing code failed: \(error.localizedDescription)")
         return nil
     }
+}
+
+// The code this user already has, or nil when they have none that is still valid.
+// Throws when the server couldn't be asked, so "no code" and "couldn't check" stay different.
+func fetchPairingCode() async throws -> PairingCodeInfo? {
+    guard let token = SessionStore.load() else { return nil }
+    let url = URL(string: "https://hongyeon-api.onrender.com/pairing/code")!
+    var request = URLRequest(url: url)
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+        throw URLError(.badServerResponse)
+    }
+    return pairingCodeInfo(from: data)
 }
 
 func joinPairingCode(_ code: String) async -> Bool {
