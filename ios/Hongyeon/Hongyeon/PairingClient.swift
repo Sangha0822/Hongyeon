@@ -103,6 +103,8 @@ func unpairPartner() async -> Bool {
         let (_, response) = try await URLSession.shared.data(for: request)
         let success = (response as? HTTPURLResponse)?.statusCode == 200
         if success {
+            // This phone asked for it, so it shouldn't be told "your partner disconnected".
+            UserDefaults.standard.removeObject(forKey: wasPairedKey)
             await AppState.shared.refresh()
         }
         return success

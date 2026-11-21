@@ -54,6 +54,12 @@ func fetchPartnerLocationStatus() async -> PartnerLocationStatus? {
     do {
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        // The server says this account is no longer paired (the partner disconnected):
+        // re-check /me so the app leaves Home.
+        if json["paired"] as? Bool == false {
+            await AppState.shared.refresh()
+            return nil
+        }
         guard let lat = json["lat"] as? Double, let lng = json["lng"] as? Double else { return nil }
 
         var updatedAt: Date? = nil

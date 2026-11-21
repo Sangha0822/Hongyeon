@@ -17,15 +17,21 @@ enum AccountStatus {
     case unreachable  // couldn't reach the server, and there's no earlier answer
 }
 
+// Set while this phone's account is paired, so a later "unpaired" that this phone didn't ask for
+// can be recognised as the partner disconnecting, even across app launches.
+let wasPairedKey = "wasPaired"
+
 @MainActor
 class AppState: ObservableObject {
     static let shared = AppState()
 
     @Published var status: AccountStatus = .checking
+    @Published var partnerDisconnected = false // shown once on the choice screen
 
     func refresh() async {
         guard let token = SessionStore.load() else {
             status = .signedOut
+            notePairingChange()
             print("AppState refreshed: signedOut (no token)")
             return
         }
@@ -66,7 +72,27 @@ class AppState: ObservableObject {
             print("Failed to refresh app state: \(error.localizedDescription)")
             keepStatusOrMarkUnreachable()
         }
+        notePairingChange()
         print("AppState refreshed: \(status)")
+    }
+
+    // Paired → unpaired without this phone asking for it means the partner disconnected.
+    // unpairPartner() clears the note first, so the phone that tapped Disconnect sees nothing.
+    private func notePairingChange() {
+        let defaults = UserDefaults.standard
+        switch status {
+        case .paired:
+            defaults.set(true, forKey: wasPairedKey)
+            partnerDisconnected = false
+        case .unpaired where defaults.bool(forKey: wasPairedKey):
+            defaults.removeObject(forKey: wasPairedKey)
+            partnerDisconnected = true
+        case .signedOut:
+            defaults.removeObject(forKey: wasPairedKey)
+            partnerDisconnected = false
+        default:
+            break
+        }
     }
 
     // One failed request shouldn't replace an answer we already have
