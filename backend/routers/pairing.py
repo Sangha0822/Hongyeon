@@ -63,10 +63,15 @@ async def read_pairing_code(current_user: User = Depends(get_current_user)):
 class JoinPairingRequest(BaseModel):
     code: str
 
+# Each way a join can fail gets a fixed code the app can rely on, plus a readable message.
+# The codes never change; the messages are for people reading logs and may be reworded.
+def join_error(code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=400, detail={"code": code, "message": message})
+
 @router.post("/pairing/join")
 async def join_pairing_code(request: JoinPairingRequest, current_user: User = Depends(get_current_user)):
     if current_user.partner_id is not None:
-        raise HTTPException(status_code=400, detail="You are already paired")
+        raise join_error("already_paired", "You are already paired")
 
     # The app shows codes as "HY-XXXXXX". Accept that form, the bare six characters,
     # lowercase, and stray spaces, so however the code was typed or pasted it still matches.
@@ -74,14 +79,16 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
     async with async_session() as session:
         pairing_code = await session.get(PairingCode, code)
         if pairing_code is None or pairing_code.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Invalid or expired pairing code")
+            # Expired codes are usually deleted by the next create, so "expired" and
+            # "never existed" can't be told apart reliably; they share one error.
+            raise join_error("code_not_found", "Invalid or expired pairing code")
 
         if pairing_code.creator_id == current_user.id:
-            raise HTTPException(status_code=400, detail="You cannot join your own pairing code")
+            raise join_error("own_code", "You cannot join your own pairing code")
 
         creator = await session.get(User, pairing_code.creator_id)
         if creator.partner_id is not None:
-            raise HTTPException(status_code=400, detail="This pairing code's creator is already paired")
+            raise join_error("partner_already_paired", "This pairing code's creator is already paired")
 
         joiner = await session.get(User, current_user.id)
         creator.partner_id = joiner.id
