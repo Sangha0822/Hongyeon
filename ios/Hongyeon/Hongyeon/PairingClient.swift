@@ -60,8 +60,15 @@ func fetchPairingCode() async throws -> PairingCodeInfo? {
     return pairingCodeInfo(from: data)
 }
 
-func joinPairingCode(_ code: String) async -> Bool {
-    guard let token = SessionStore.load() else { return false }
+// How a join attempt ended.
+enum JoinResult {
+    case joined
+    // errorCode is the server's fixed code (e.g. "own_code"), or nil when the server couldn't be reached.
+    case failed(errorCode: String?)
+}
+
+func joinPairingCode(_ code: String) async -> JoinResult {
+    guard let token = SessionStore.load() else { return .failed(errorCode: nil) }
     let url = URL(string: "https://hongyeon-api.onrender.com/pairing/join")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -70,16 +77,18 @@ func joinPairingCode(_ code: String) async -> Bool {
     request.httpBody = try? JSONSerialization.data(withJSONObject: ["code": code])
 
     do {
-        let (_, response) = try await URLSession.shared.data(for: request)
-        let success = (response as? HTTPURLResponse)?.statusCode == 200
-        if success {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if (response as? HTTPURLResponse)?.statusCode == 200 {
             await AppState.shared.refresh()
+            return .joined
         }
-        return success
-
+        // Failures look like {"detail": {"code": "own_code", "message": "..."}}.
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let detail = json?["detail"] as? [String: Any]
+        return .failed(errorCode: detail?["code"] as? String ?? "unknown")
     } catch {
         print("Join pairing code failed: \(error.localizedDescription)")
-        return false
+        return .failed(errorCode: nil)
     }
 }
 

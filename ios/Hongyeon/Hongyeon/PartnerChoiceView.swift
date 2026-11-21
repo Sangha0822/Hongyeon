@@ -34,7 +34,6 @@ struct PartnerChoiceView: View {
                                 .font(Theme.bodyFont)
                                 .foregroundColor(Theme.textSecondary)
 
-                            // "I Have a Code" still opens the old pairing screen until Phase 6.7.
                             VStack(spacing: 12) {
                                 NavigationLink {
                                     InviteView()
@@ -66,7 +65,7 @@ struct PartnerChoiceView: View {
                                 .padding(.vertical, 8)
 
                                 NavigationLink {
-                                    PairingView()
+                                    EnterCodeView()
                                 } label: {
                                     HStack(spacing: 10) {
                                         Image(systemName: "link")
@@ -113,6 +112,9 @@ struct PartnerChoiceView: View {
         // The first screen in a stack gets room for a large title by default;
         // inline keeps the content right under the wordmark.
         .navigationBarTitleDisplayMode(.inline)
+        // Swiping back from the code screen while its keyboard is still up would otherwise
+        // squeeze this screen above the keyboard, then slide it down.
+        .ignoresSafeArea(.keyboard)
         .navigationDestination(isPresented: $goToInvite) {
             InviteView()
         }
