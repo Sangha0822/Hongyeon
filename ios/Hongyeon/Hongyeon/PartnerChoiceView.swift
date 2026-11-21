@@ -7,6 +7,7 @@ import SwiftUI
 
 // The first screen for a signed-in user who isn't paired: invite a partner, or enter their code.
 struct PartnerChoiceView: View {
+    @ObservedObject private var appState = AppState.shared
     @State private var goToInvite = false
     @State private var checkedForCode = false
 
@@ -26,6 +27,17 @@ struct PartnerChoiceView: View {
                             .padding(.vertical, 8)
 
                         VStack(spacing: 12) {
+                            if appState.partnerDisconnected {
+                                Text("Your partner disconnected. You can connect again anytime.")
+                                    .font(Theme.captionFont)
+                                    .foregroundColor(Theme.textPrimary)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Theme.blossom.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
+                                    .padding(.bottom, 8)
+                            }
+
                             Text("Let’s connect our\nred thread.")
                                 .font(Theme.displayFont)
                                 .foregroundColor(Theme.textPrimary)

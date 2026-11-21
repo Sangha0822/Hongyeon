@@ -11,6 +11,7 @@ import CoreLocation
 struct RootView: View {
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var appState = AppState.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var devMenuTapCount = 0
     @State private var showDevMenu = false
 
@@ -64,6 +65,13 @@ struct RootView: View {
         }
         .task {
             await AppState.shared.refresh()
+        }
+        // Coming back to the app re-checks the account, so a change made while it was in the
+        // background (like the partner disconnecting) shows even if no push arrived.
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await AppState.shared.refresh() }
+            }
         }
         .sheet(isPresented: $showDevMenu) {
             DevMenuView()
