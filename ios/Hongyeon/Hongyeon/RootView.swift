@@ -40,8 +40,10 @@ struct RootView: View {
                         NavigationStack {
                             ConnectedView()
                         }
-                    } else if locationManager.authorizationStatus == .notDetermined {
-                        LocationOnboardingView()
+                    } else if locationManager.authorizationStatus == .notDetermined || locationManager.justDenied {
+                        NavigationStack {
+                            LocationOnboardingView()
+                        }
                     } else {
                         HomeView()
                     }

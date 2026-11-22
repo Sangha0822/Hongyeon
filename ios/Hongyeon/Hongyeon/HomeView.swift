@@ -26,38 +26,42 @@ struct HomeView: View {
                     .font(Theme.titleFont)
                     .foregroundColor(Theme.accent)
 
-                VStack(spacing: 16) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 56))
-                        .foregroundColor(Theme.accent)
-                        .rotationEffect(.degrees(displayedBearing))
-                        .opacity(bearingDegrees != nil ? 1 : 0)
-                        .onChange(of: bearingDegrees) { _, newValue in
-                            if let newValue {
-                                withAnimation(.easeInOut(duration: 1.0)) {
-                                    displayedBearing = newValue
+                if isLocationOff {
+                    locationOffCard
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 56))
+                            .foregroundColor(Theme.accent)
+                            .rotationEffect(.degrees(displayedBearing))
+                            .opacity(bearingDegrees != nil ? 1 : 0)
+                            .onChange(of: bearingDegrees) { _, newValue in
+                                if let newValue {
+                                    withAnimation(.easeInOut(duration: 1.0)) {
+                                        displayedBearing = newValue
+                                    }
                                 }
                             }
-                        }
 
-                    Text(distanceText)
-                        .font(Theme.bodyFont.weight(.semibold))
-                        .foregroundColor(Theme.textPrimary)
+                        Text(distanceText)
+                            .font(Theme.bodyFont.weight(.semibold))
+                            .foregroundColor(Theme.textPrimary)
 
-                    Text(lastActiveText)
-                        .font(Theme.captionFont)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                .padding(24)
-                .frame(maxWidth: .infinity)
-                .background(
-                    ZStack {
-                        Theme.cardBackground
-                        TexturedBackground()
+                        Text(lastActiveText)
+                            .font(Theme.captionFont)
+                            .foregroundColor(Theme.textSecondary)
                     }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color.black.opacity(0.08), radius: 8, y: 4)
+                    .padding(24)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        ZStack {
+                            Theme.cardBackground
+                            TexturedBackground()
+                        }
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 4)
+                }
 
                 Button("Refresh") {
                     Task {
@@ -89,6 +93,50 @@ struct HomeView: View {
         .task {
             await refreshPartnerStatus()
         }
+        // Turning location on in Settings brings the user back here; fetch right away.
+        .onChange(of: locationManager.authorizationStatus) { _, _ in
+            if !isLocationOff {
+                Task { await refreshPartnerStatus() }
+            }
+        }
+    }
+
+    // iOS shows its location popup only once, so after a "no" the only way back is Settings.
+    private var isLocationOff: Bool {
+        locationManager.authorizationStatus == .denied || locationManager.authorizationStatus == .restricted
+    }
+
+    private var locationOffCard: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "location.slash")
+                .font(.system(size: 32))
+                .foregroundColor(Theme.accent)
+                .accessibilityHidden(true)
+
+            Text("Location is off")
+                .font(Theme.bodyFont.weight(.semibold))
+                .foregroundColor(Theme.textPrimary)
+
+            Text("Turn it on to see how far apart you are, and the direction to each other.")
+                .font(Theme.captionFont)
+                .foregroundColor(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .padding(.top, 4)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Theme.line, lineWidth: 1)
+        )
     }
 
 
