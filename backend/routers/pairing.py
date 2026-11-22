@@ -138,8 +138,11 @@ async def unpair(current_user: User = Depends(get_current_user)):
         partner_token = partner.apns_token if partner is not None else None
         partner_id = partner.id if partner is not None else None
         user.partner_id = None
+        # The date was this couple's; keeping it would carry it into either person's next pairing.
+        user.anniversary = None
         if partner is not None:
             partner.partner_id = None
+            partner.anniversary = None
 
         await session.commit()
 
