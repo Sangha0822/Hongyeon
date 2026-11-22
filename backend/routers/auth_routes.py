@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -65,7 +66,7 @@ async def read_me(current_user: User = Depends(get_current_user)):
             if partner is not None:
                 partner_name = partner.display_name
 
-    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider, "paired": paired_bool, "display_name": current_user.display_name, "partner_name": partner_name}
+    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider, "paired": paired_bool, "display_name": current_user.display_name, "partner_name": partner_name, "anniversary": current_user.anniversary.isoformat() if current_user.anniversary else None}
 
 class NameRequest(BaseModel):
     display_name: str
@@ -82,3 +83,23 @@ async def update_name(request: NameRequest, current_user: User = Depends(get_cur
         await session.commit()
 
     return {"display_name": name}
+
+class AnniversaryRequest(BaseModel):
+    anniversary: date
+
+@router.put("/me/anniversary")
+async def update_anniversary(request: AnniversaryRequest, current_user: User = Depends(get_current_user)):
+    # One day of slack: the server runs on UTC, and in time zones ahead of UTC
+    # (like Korea) the user's "today" is still tomorrow here for part of the day.
+    latest_allowed = datetime.now(timezone.utc).date() + timedelta(days=1)
+    if request.anniversary > latest_allowed:
+        raise HTTPException(status_code=422, detail="Anniversary can't be in the future")
+    if request.anniversary < date(1900, 1, 1):
+        raise HTTPException(status_code=422, detail="Anniversary is too far in the past")
+
+    async with async_session() as session:
+        user = await session.get(User, current_user.id)
+        user.anniversary = request.anniversary
+        await session.commit()
+
+    return {"anniversary": request.anniversary.isoformat()}

@@ -94,6 +94,11 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
         creator.partner_id = joiner.id
         joiner.partner_id = creator.id
 
+        # The couple shares one date: the creator's if they gave one, otherwise the joiner's.
+        couple_anniversary = creator.anniversary or joiner.anniversary
+        creator.anniversary = couple_anniversary
+        joiner.anniversary = couple_anniversary
+
         creator_token = creator.apns_token
         creator_id = creator.id
 
