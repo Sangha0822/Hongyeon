@@ -100,6 +100,11 @@ async def update_anniversary(request: AnniversaryRequest, current_user: User = D
     async with async_session() as session:
         user = await session.get(User, current_user.id)
         user.anniversary = request.anniversary
+        # The date belongs to the couple: both rows change in one commit, so they can't disagree.
+        if user.partner_id is not None:
+            partner = await session.get(User, user.partner_id)
+            if partner is not None:
+                partner.anniversary = request.anniversary
         await session.commit()
 
     return {"anniversary": request.anniversary.isoformat()}
