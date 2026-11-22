@@ -70,6 +70,8 @@ class AppState: ObservableObject {
                 } else {
                     status = .needsName
                 }
+
+                await saveDraftAnniversary(accountHasOne: json?["anniversary"] is String, paired: paired)
             } else {
                 keepStatusOrMarkUnreachable()
             }
@@ -102,6 +104,19 @@ class AppState: ObservableObject {
             justConnected = false
         default:
             break
+        }
+    }
+
+    // The date picked before sign-in. A date already on the account wins, and once paired the
+    // couple's date is settled, so a late save would give the two partners different dates.
+    // A failed save keeps the draft for the next refresh; the date is optional, so it never blocks.
+    private func saveDraftAnniversary(accountHasOne: Bool, paired: Bool) async {
+        guard let draft = UserDefaults.standard.string(forKey: draftAnniversaryKey) else { return }
+
+        if accountHasOne || paired {
+            UserDefaults.standard.removeObject(forKey: draftAnniversaryKey)
+        } else if await saveAnniversary(draft) {
+            UserDefaults.standard.removeObject(forKey: draftAnniversaryKey)
         }
     }
 

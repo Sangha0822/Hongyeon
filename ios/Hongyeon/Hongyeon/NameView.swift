@@ -14,7 +14,7 @@ struct NameView: View {
     // and the name has to survive until AppState saves it to the account.
     @AppStorage(draftNameKey) private var draftName = ""
     @State private var name = "" // what's being typed; saved to draftName on Continue
-    @State private var goToSignIn = false
+    @State private var goToAnniversary = false
     @State private var isSaving = false
     @State private var showsError = false
     @FocusState private var isNameFocused: Bool
@@ -55,7 +55,7 @@ struct NameView: View {
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
                             .submitLabel(.continue)
-                            .onSubmit(continueToSignIn)
+                            .onSubmit(continueToNextStep)
                             .focused($isNameFocused)
                             .padding()
                             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
@@ -94,13 +94,13 @@ struct NameView: View {
         .navigationBarTitleDisplayMode(.inline)
         // The keyboard counts as part of the safe area, so this button rides up above it.
         .safeAreaInset(edge: .bottom) {
-            Button("Continue", action: continueToSignIn)
+            Button("Continue", action: continueToNextStep)
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(trimmedName.isEmpty || isSaving)
                 .padding(.horizontal, 32)
                 .padding(.bottom, 16)
         }
-        // Opens the keyboard on arrival, and again when coming back from sign-in.
+        // Opens the keyboard on arrival, and again when coming back from the next screen.
         // Waits for the slide-in to finish: focusing mid-animation opens the keyboard,
         // but SwiftUI misses the safe-area change and Continue stays hidden behind it.
         .task {
@@ -110,18 +110,18 @@ struct NameView: View {
             try? await Task.sleep(for: .milliseconds(500))
             isNameFocused = true
         }
-        .navigationDestination(isPresented: $goToSignIn) {
-            SignInView(isReturning: false)
+        .navigationDestination(isPresented: $goToAnniversary) {
+            AnniversaryView()
         }
     }
 
     // Shared by the Continue button and the keyboard's return key.
-    private func continueToSignIn() {
+    private func continueToNextStep() {
         guard !trimmedName.isEmpty, !isSaving else { return }
 
         guard isMissingName else {
             draftName = trimmedName
-            goToSignIn = true
+            goToAnniversary = true
             return
         }
 

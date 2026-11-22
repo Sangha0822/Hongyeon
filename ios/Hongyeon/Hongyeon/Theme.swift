@@ -12,8 +12,8 @@ enum Theme {
     static let accent = Color(hex: 0xB74650)         // "thread" dusty rose: buttons, highlights
     static let background = Color(hex: 0xF8F3EC)     // "paper": screen background
     static let cardBackground = Color(hex: 0xFFFCF7) // "surface": cards, inputs
-    static let textPrimary = Color(hex: 0x2E2624)    // "ink": main text
-    static let textSecondary = Color(hex: 0x6B605A)  // "muted": hints, captions
+    static let textPrimary = Color(hex: 0x825B52)    // "ink": main text, the design's warm brown (5.3:1 on paper)
+    static let textSecondary = Color(hex: 0x866862)  // "muted": hints, captions; the design's #937670 darkened to pass 4.5:1
     static let line = Color(hex: 0xE7DCD1)           // borders, dividers
     static let blush = Color(hex: 0xD98C8D)          // decoration only, too light for text
     static let blossom = Color(hex: 0xF6D6D5)        // soft rose tint for fills
