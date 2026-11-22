@@ -36,7 +36,11 @@ struct RootView: View {
                     }
                     .tint(Theme.textPrimary)
                 case .paired:
-                    if locationManager.authorizationStatus == .notDetermined {
+                    if appState.justConnected {
+                        NavigationStack {
+                            ConnectedView()
+                        }
+                    } else if locationManager.authorizationStatus == .notDetermined {
                         LocationOnboardingView()
                     } else {
                         HomeView()

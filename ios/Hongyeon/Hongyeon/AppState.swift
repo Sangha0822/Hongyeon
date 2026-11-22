@@ -27,6 +27,9 @@ class AppState: ObservableObject {
 
     @Published var status: AccountStatus = .checking
     @Published var partnerDisconnected = false // shown once on the choice screen
+    @Published var justConnected = false // shows "You're connected" once, right after pairing
+    @Published var displayName: String?
+    @Published var partnerName: String?
 
     func refresh() async {
         guard let token = SessionStore.load() else {
@@ -52,6 +55,8 @@ class AppState: ObservableObject {
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 let paired = json?["paired"] as? Bool ?? false
                 let hasName = json?["display_name"] is String
+                displayName = json?["display_name"] as? String
+                partnerName = json?["partner_name"] as? String
                 let draftName = UserDefaults.standard.string(forKey: draftNameKey) ?? ""
 
                 if hasName {
@@ -82,6 +87,10 @@ class AppState: ObservableObject {
         let defaults = UserDefaults.standard
         switch status {
         case .paired:
+            // Not paired the last time this phone checked, so the pairing just happened.
+            if !defaults.bool(forKey: wasPairedKey) {
+                justConnected = true
+            }
             defaults.set(true, forKey: wasPairedKey)
             partnerDisconnected = false
         case .unpaired where defaults.bool(forKey: wasPairedKey):
@@ -90,6 +99,7 @@ class AppState: ObservableObject {
         case .signedOut:
             defaults.removeObject(forKey: wasPairedKey)
             partnerDisconnected = false
+            justConnected = false
         default:
             break
         }
