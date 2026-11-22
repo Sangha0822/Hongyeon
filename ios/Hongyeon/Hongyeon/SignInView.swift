@@ -84,14 +84,12 @@ struct SignInView: View {
                     .padding(.bottom, 16)
             }
         }
-        // Pushed from the Name screen while its keyboard is still up; without this the
-        // content squeezes above the keyboard, then slides down as it goes away.
-        .ignoresSafeArea(.keyboard)
-        // "I already have an account" never asks for a name, so a draft left over from an
+        // "I already have an account" never asks for a name or date, so drafts left over from an
         // abandoned Get started attempt must not end up on the account that signs in here.
         .onAppear {
             if isReturning {
                 UserDefaults.standard.removeObject(forKey: draftNameKey)
+                UserDefaults.standard.removeObject(forKey: draftAnniversaryKey)
             }
         }
         .toolbar {
