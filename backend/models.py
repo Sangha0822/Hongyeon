@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Float, DateTime
-from datetime import datetime
+from sqlalchemy import Float, DateTime, Date
+from datetime import datetime, date
 import uuid
 from sqlalchemy import String, ForeignKey, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,6 +26,9 @@ class User(Base):
     partner_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("users.id"), nullable = True)
     apns_token: Mapped[str | None] = mapped_column(String, nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # A calendar day with no time zone, so both partners read the same date wherever they are.
+    # Before pairing it is this person's own answer; pairing writes the couple's date to both rows.
+    anniversary: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 class PairingCode(Base):
     __tablename__ = "pairing_codes"
