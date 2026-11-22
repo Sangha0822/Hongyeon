@@ -26,8 +26,18 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.requestWhenInUseAuthorization()
     }
     
+    // True right after a "Don't Allow" in our own popup, so onboarding can answer it calmly.
+    // Turning location off later in Settings doesn't set it; Home handles that case.
+    @Published var justDenied = false
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let previous = authorizationStatus
         authorizationStatus = manager.authorizationStatus
+        if previous == .notDetermined && authorizationStatus == .denied {
+            justDenied = true
+        } else if authorizationStatus != .denied {
+            justDenied = false
+        }
     }
     
     @Published var lastLocation: CLLocation?
