@@ -55,7 +55,17 @@ async def auth_google(request: GoogleAuthRequest):
 @router.get("/me")
 async def read_me(current_user: User = Depends(get_current_user)):
     paired_bool = False if current_user.partner_id is None else True
-    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider, "paired": paired_bool, "display_name": current_user.display_name}
+
+    # The partner's name, for screens that show both of you. Only the name is shared,
+    # nothing else about the partner's account.
+    partner_name = None
+    if current_user.partner_id is not None:
+        async with async_session() as session:
+            partner = await session.get(User, current_user.partner_id)
+            if partner is not None:
+                partner_name = partner.display_name
+
+    return {"id": str(current_user.id), "email": current_user.email, "auth_provider": current_user.auth_provider, "paired": paired_bool, "display_name": current_user.display_name, "partner_name": partner_name}
 
 class NameRequest(BaseModel):
     display_name: str
