@@ -158,6 +158,29 @@ Built in phases that front-load the riskiest, least-glamorous parts first.
 Setup instructions will be added here as the backend and clients come together. (Secrets are
 kept out of the repo entirely — configuration is via a local `.env` that is never committed.)
 
+### Running the backend tests
+
+The tests call the FastAPI app directly against a separate local PostgreSQL database. They never
+contact Apple, Google, APNs or the production database: sign-in and push are replaced with fakes,
+and session tokens are signed with a test-only secret.
+
+One-time setup, from `backend/` with the virtual environment active:
+
+```
+createdb hongyeon_test
+pip install -r requirements-dev.txt
+```
+
+Run them:
+
+```
+python -m pytest
+```
+
+Every run rebuilds the tables and empties them after each test. As a safeguard, the tests refuse to
+start unless the database name ends in `_test`. To use a different database, set
+`TEST_DATABASE_URL` (for example in CI).
+
 ## Following along
 
 I'm documenting the whole journey — the reasoning behind each decision, not just the final code.
