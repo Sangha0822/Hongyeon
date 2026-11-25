@@ -10,6 +10,8 @@ import CoreLocation
 
 struct HomeView: View {
     @ObservedObject private var locationManager = LocationManager.shared
+    @ObservedObject private var appState = AppState.shared
+    @State private var showsAnniversarySheet = false
     @State private var lastActiveText = "Checking..."
     @State private var partnerStatus: PartnerLocationStatus? = nil
     @State private var pairingStatus = ""
@@ -22,9 +24,7 @@ struct HomeView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                Text("You're Connected!")
-                    .font(Theme.titleFont)
-                    .foregroundColor(Theme.accent)
+                daysTogether
 
                 if isLocationOff {
                     locationOffCard
@@ -97,6 +97,40 @@ struct HomeView: View {
         .onChange(of: locationManager.authorizationStatus) { _, _ in
             if !isLocationOff {
                 Task { await refreshPartnerStatus() }
+            }
+        }
+    }
+
+    // Re-drawn every minute while on screen, so the count turns over at midnight.
+    @ViewBuilder
+    private var daysTogether: some View {
+        if let anniversary = appState.anniversary {
+            TimelineView(.everyMinute) { context in
+                if let day = dayNumber(since: anniversary, today: context.date) {
+                    VStack(spacing: 2) {
+                        Text("Day \(day)")
+                            .font(Theme.displayFont)
+                            .foregroundColor(Theme.textPrimary)
+                        Text("together")
+                            .font(Theme.handwrittenFont)
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        } else {
+            VStack(spacing: 8) {
+                Text("When did your story begin?")
+                    .font(Theme.taglineFont)
+                    .foregroundColor(Theme.textPrimary)
+                Button("Add your date") {
+                    showsAnniversarySheet = true
+                }
+                .font(Theme.bodyFont.weight(.semibold))
+                .foregroundColor(Theme.accent)
+            }
+            .sheet(isPresented: $showsAnniversarySheet) {
+                AnniversarySheet()
             }
         }
     }

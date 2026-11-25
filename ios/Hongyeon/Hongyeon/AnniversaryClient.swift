@@ -15,10 +15,22 @@ let anniversaryFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.calendar = Calendar(identifier: .gregorian)
     formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.timeZone = .current
+    formatter.timeZone = .autoupdatingCurrent // follows the phone after travel; .current is a snapshot
     formatter.dateFormat = "yyyy-MM-dd"
     return formatter
 }()
+
+// Korean style: the anniversary itself is Day 1. Counts calendar days in the phone's
+// time zone (not seconds / 86400, which drifts around daylight-saving changes).
+// Never below 1: a partner a day ahead can set a date that is still "tomorrow" here.
+func dayNumber(since anniversary: String, today: Date) -> Int? {
+    guard let start = anniversaryFormatter.date(from: anniversary) else { return nil }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = .autoupdatingCurrent
+    let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: start),
+                                       to: calendar.startOfDay(for: today)).day ?? 0
+    return max(1, days + 1)
+}
 
 // Saves the signed-in user's anniversary. Returns whether the server accepted it.
 func saveAnniversary(_ day: String) async -> Bool {
