@@ -4,10 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError
-from aioapns import NotificationRequest, PushType
 from database import async_session
 from models import User, PairingCode
-from push import get_apns_client
+from push import send_silent_push
 from dependencies import get_current_user
 
 
@@ -105,23 +104,7 @@ async def join_pairing_code(request: JoinPairingRequest, current_user: User = De
         await session.delete(pairing_code)
         await session.commit()
 
-    if creator_token:
-        push_request = NotificationRequest(
-            device_token=creator_token,
-            message={"aps": {"content-available": 1}},
-            push_type=PushType.BACKGROUND,
-        )
-        try:
-            response = await get_apns_client().send_notification(push_request)
-            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
-
-            if response.description == "BadDeviceToken" or response.description == "Unregistered":
-                async with async_session() as session:
-                    stale_creator = await session.get(User, creator_id)
-                    stale_creator.apns_token = None
-                    await session.commit()
-        except Exception as e:
-            print(f"Push send failed: {e}")
+    await send_silent_push(creator_id, creator_token)
 
     return {"partner_id": str(creator.id)}
 
@@ -146,22 +129,7 @@ async def unpair(current_user: User = Depends(get_current_user)):
 
         await session.commit()
 
-    if partner_token:
-        push_request = NotificationRequest(
-            device_token=partner_token,
-            message={"aps": {"content-available": 1}},
-            push_type=PushType.BACKGROUND,
-        )
-        try:
-            response = await get_apns_client().send_notification(push_request)
-            print(f"Push send result: is_successful={response.is_successful}, description={response.description}")
-
-            if response.description == "BadDeviceToken" or response.description == "Unregistered":
-                async with async_session() as session:
-                    stale_partner = await session.get(User, partner_id)
-                    stale_partner.apns_token = None
-                    await session.commit()
-        except Exception as e:
-            print(f"Push send failed: {e}")
+    if partner_id is not None:
+        await send_silent_push(partner_id, partner_token)
 
     return {"unpaired": True}
