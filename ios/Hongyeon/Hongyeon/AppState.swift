@@ -30,6 +30,7 @@ class AppState: ObservableObject {
     @Published var justConnected = false // shows "You're connected" once, right after pairing
     @Published var displayName: String?
     @Published var partnerName: String?
+    @Published var anniversary: String? // the couple's "yyyy-MM-dd", or nil if not set
 
     func refresh() async {
         guard let token = SessionStore.load() else {
@@ -57,6 +58,7 @@ class AppState: ObservableObject {
                 let hasName = json?["display_name"] is String
                 displayName = json?["display_name"] as? String
                 partnerName = json?["partner_name"] as? String
+                anniversary = json?["anniversary"] as? String
                 let draftName = UserDefaults.standard.string(forKey: draftNameKey) ?? ""
 
                 if hasName {
