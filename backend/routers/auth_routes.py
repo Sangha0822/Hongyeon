@@ -6,6 +6,7 @@ from database import async_session
 from models import User
 from auth import verify_apple_identity_token, verify_google_identity_token, create_session_token
 from dependencies import get_current_user
+from push import send_silent_push
 
 router = APIRouter()
 
@@ -97,6 +98,7 @@ async def update_anniversary(request: AnniversaryRequest, current_user: User = D
     if request.anniversary < date(1900, 1, 1):
         raise HTTPException(status_code=422, detail="Anniversary is too far in the past")
 
+    partner = None
     async with async_session() as session:
         user = await session.get(User, current_user.id)
         user.anniversary = request.anniversary
@@ -106,5 +108,9 @@ async def update_anniversary(request: AnniversaryRequest, current_user: User = D
             if partner is not None:
                 partner.anniversary = request.anniversary
         await session.commit()
+
+    # Sent after the commit, so the partner's phone refreshes into the saved date.
+    if partner is not None:
+        await send_silent_push(partner.id, partner.apns_token)
 
     return {"anniversary": request.anniversary.isoformat()}
